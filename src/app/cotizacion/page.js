@@ -186,29 +186,40 @@ const handleAddProduct = () => {
             </Button>
           </div>
 
-          <div className="mb-6 flex flex-col md:flex-row gap-3">
-            <input
-              placeholder="Producto personalizado"
-              value={customItem.name}
-              onChange={e => setCustomItem({ ...customItem, price: parseFloat(e.target.value) || 0 })}
-              
-              className="flex-1 border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            />
-            <input
-              type="number"
-              placeholder="Precio"
-              value={customItem.price === 0 ? '' : customItem.price}
-              onChange={e => setCustomItem({ ...customItem, price: parseInt(e.target.value) || 0 })}
-              className="w-32 border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            />
-            <Button
-              onClick={handleAddCustom}
-              disabled={!customItem.name || customItem.price <= 0}
-              className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50"
-            >
-              ➕ Agregar
-            </Button>
-          </div>
+ <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
+  <h3 className="text-lg font-semibold text-gray-800 mb-3">➕ Producto Personalizado</h3>
+  <div className="flex flex-col md:flex-row gap-4 items-center">
+    <div className="w-full md:flex-1">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del producto</label>
+      <input
+        placeholder="Producto personalizado"
+        value={customItem.name}
+        onChange={e => setCustomItem({ ...customItem, name: e.target.value })}
+        className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+      />
+    </div>
+    <div className="w-full md:w-40">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+      <input
+        type="number"
+        placeholder="Precio"
+        value={customItem.price === 0 ? '' : customItem.price}
+        onChange={e => setCustomItem({ ...customItem, price: parseFloat(e.target.value) || 0 })}
+        className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+      />
+    </div>
+    <div className="w-full md:w-auto mt-2 md:mt-6">
+      <Button
+        onClick={handleAddCustom}
+        disabled={!customItem.name || customItem.price <= 0}
+        className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 w-full md:w-auto"
+      >
+        ➕ Agregar
+      </Button>
+    </div>
+  </div>
+</div>
+
 
           <div className="overflow-x-auto mb-6">
             <table className="min-w-full table-auto text-sm">

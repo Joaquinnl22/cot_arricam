@@ -9,7 +9,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // Redirige automáticamente si ya está autenticado
   useEffect(() => {
     const checkSession = async () => {
       const res = await fetch("/api/session", { credentials: "include" });
@@ -22,8 +21,7 @@ export default function LoginPage() {
   }, [router]);
 
   async function handleLogin(e) {
-    e.preventDefault(); // Evita que el formulario recargue la página
-
+    e.preventDefault();
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -33,7 +31,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.replace('/protegido'); // Redirige con router de Next.js
+        router.replace('/protegido');
       } else {
         setError('Usuario o contraseña incorrectos');
       }
@@ -44,40 +42,46 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="bg-white shadow-2xl rounded-2xl p-6 sm:p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 flex items-center justify-center px-4">
+      <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-md">
         <div className="flex justify-center mb-5">
-          <PiShippingContainerFill className="text-yellow-500 text-5xl animate-bounce" />
+          <PiShippingContainerFill className="text-yellow-500 text-6xl animate-bounce" />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-center text-gray-800 mb-6">
-          Iniciar Sesión
+        <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-6">
+          Bienvenido a Arricam
         </h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="Usuario"
-            value={user}
-            onChange={(e) => setUser(e.target.value)}
-          />
-          <input
-            type="password"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="Contraseña"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-          />
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+            <input
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              placeholder="Usuario"
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              placeholder="Contraseña"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+            />
+          </div>
           {error && (
             <p className="text-sm text-red-500 text-center">{error}</p>
           )}
           <button
             type="submit"
-            className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-lg transition-all border border-yellow-600"
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-lg transition-all"
           >
             Ingresar
           </button>
         </form>
         <p className="text-center text-sm text-gray-400 mt-6">
-          © {new Date().getFullYear()} Arricam
+          © {new Date().getFullYear()} Arricam. Todos los derechos reservados.
         </p>
       </div>
     </div>

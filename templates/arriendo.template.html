@@ -120,7 +120,7 @@
   <main>
     <div class="logo">
       <!-- Asegúrate que el logo esté disponible en esa ruta o usa base64 -->
-      <img src="https://arricam.cl/wp-content/uploads/2024/05/logo-arricam-color.png" alt="Logo Arricam">
+      <img src="https://arricam.cl/wp-content/uploads/2024/10/Logo-ARRICAM-Light-2024.png" alt="Logo Arricam">
     </div>
 
     <h1>COTIZACIÓN ARRIENDO</h1>
@@ -132,7 +132,7 @@
       <table class="info-table">
         <tr><td><strong>Fecha:</strong></td><td>{{date}}</td></tr>
         <tr><td><strong>Cotización N°:</strong></td><td>{{quoteNumber}}</td></tr>
-        <tr><td><strong>Nombre:</strong></td><td>{{clientName}}</td></tr>
+        <tr><td><strong>Nombre:</strong></td><td>{{client}}</td></tr>
         <tr><td><strong>Empresa:</strong></td><td>{{company}}</td></tr>
       </table>
     </div>
@@ -154,14 +154,34 @@
         </tbody>
       </table>
 
-      <table style="margin-top: 20px;">
-        <tr><td><strong>Neto:</strong></td><td>${{net}}</td></tr>
-        <tr><td><strong>IVA (19%):</strong></td><td>${{iva}}</td></tr>
-        <tr><td><strong>Total:</strong></td><td>${{total}}</td></tr>
-        <tr><td><strong>Garantía:</strong></td><td>${{guarantee}}</td></tr>
-        <tr><td><strong>Total Pago:</strong></td><td>${{finalTotal}}</td></tr>
-      </table>
-    </div>
+<div class="totales">
+  <h3 class="section-title">Resumen de Valores</h3>
+  <table class="details-table" style="width: 300px; float: right; margin-top: 20px;">
+    <tbody>
+      <tr>
+        <td><strong>Neto:</strong></td>
+        <td style="text-align: right;">${{net}}</td>
+      </tr>
+      <tr>
+        <td><strong>IVA (19%):</strong></td>
+        <td style="text-align: right;">${{iva}}</td>
+      </tr>
+      <tr>
+        <td><strong>Total:</strong></td>
+        <td style="text-align: right;">${{total}}</td>
+      </tr>
+      <tr>
+        <td><strong>Garantía:</strong></td>
+        <td style="text-align: right;">${{guarantee}}</td>
+      </tr>
+      <tr>
+        <td><strong>Total Pago:</strong></td>
+        <td style="text-align: right;">${{finalTotal}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
        <!-- Salto a página 2 -->
     <div class="page-break"></div>
 
@@ -170,12 +190,7 @@
       ***NOTA: LOS VALORES DEL ARRIENDO SON FIJOS POR UN AÑO, PUEDE QUE SE REAJUSTE SI PASA DE ESTE TIEMPO.  
       ******EL FLETE DE RETORNO PUEDE SUFRIR ALGUNA VARIACIÓN SU COSTO AL MOMENTO DEL RETIRO DESPUES DE UN AÑO,
 SE LE COMUNICARA AL MOMENTO DE SOLICITAR EL RETIRO LA DIFERENCIA A CANCELAR***
-      {{notes}}
     </div>
-
- 
-
-    <!-- Página 2: Condiciones -->
     <div class="condiciones">
       <h3 class="section-title">2. CONDICIONES COMERCIALES</h3>
       RESERVA MEDIANTE ORDEN DE COMPRA, INDICANDO VALORES, CANTIDADES Y DETALLE DE EQUIPOS ARRENDADOS,
@@ -200,16 +215,12 @@ FIRMA CONTRATO Y PAGO CONTADO DE LO COTIZADO.
 
     <div class="footer-content">
       <h3 class="section-title">Observaciones para evitar cargos adicionales</h3>
-      ▪ No modificar ni intervenir muros, puertas, techo, cielo y piso. El módulo debe entregarse en las mismas condiciones que se entregó para
-no aplicar cargos en reparaciones.
-      ▪ Los módulos deben ser entregados limpios, sin residuos, mobiliarios y/o excedentes. En caso de módulo batería de baño, debe estar
-limpio, desinfectado, con sus descargas evacuadas y vacías, de lo contrario, se procederá al no retiro del módulo, lo que implica igual
-cobro de flete, y se solicitará nuevo pago para el siguiente retiro.
+      ▪ No modificar ni intervenir muros, puertas, techo, cielo y piso. El módulo debe entregarse en las mismas condiciones que se entregó para no aplicar cargos en reparaciones.
+      ▪ Los módulos deben ser entregados limpios, sin residuos, mobiliarios y/o excedentes. En caso de módulo batería de baño, debe estar limpio, desinfectado, con sus descargas evacuadas y vacías, de lo contrario, se procederá al no retiro del módulo, lo que implica igual cobro de flete, y se solicitará nuevo pago para el siguiente retiro.
       ▪ No se puede trasladar los módulos entre obras, ni otros lugares sin previa autorización de jefatura nuestra empresa Arricam.
       ▪ El terreno donde se instalen los equipos debe estar despejado y nivelado para su correcto funcionamiento. 
       ▪ Las llaves deben volver con la unidad, de lo contrario se procede a la cobranza por cambio de cerradura.
-      ▪ De haber retraso en la recepción de los módulos, el camión esperará como máximo 30 minutos, luego de ese tiempo se procederá al
-cobro por hora.
+      ▪ De haber retraso en la recepción de los módulos, el camión esperará como máximo 30 minutos, luego de ese tiempo se procederá al cobro por hora.
 
       <h3 class="section-title">Datos para orden de compra y pago</h3>
       RAZÓN SOCIAL: COMERCIALIZADORA Y ARRIENDOS ARRICAM SPA  
