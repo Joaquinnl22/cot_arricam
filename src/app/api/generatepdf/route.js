@@ -4,17 +4,38 @@ import puppeteer from "puppeteer";
 
 export async function POST(req) {
   try {
-    const { type, date, client, company, quoteNumber, items = [], dispatch = 0, guarantee = 0 } = await req.json();
+    const {
+      type,
+      date,
+      client,
+      company,
+      quoteNumber,
+      items = [],
+      dispatch = 0,
+      guarantee = 0,
+    } = await req.json();
 
-    const templatePath = join(process.cwd(), "public", "templates", `${type}.template.html`);
-    let html = readFileSync(templatePath, "utf8");
+    const templatePath = join(
+      process.cwd(),
+      "public",
+      "templates",
+      `${type}.template.html`
+    );
+    const html = readFileSync(templatePath, "utf8");
 
     const allItems = [...items];
     if (dispatch > 0) {
-      allItems.push({ name: "Despacho", description: "Costo de envío", quantity: 1, price: dispatch });
+      allItems.push({
+        name: "Despacho",
+        description: "Costo de envío",
+        quantity: 1,
+        price: dispatch,
+      });
     }
 
-    const itemsHtml = allItems.map(item => `
+    const itemsHtml = allItems
+      .map(
+        (item) => `
       <tr>
         <td>${item.name}</td>
         <td>${item.description || "-"}</td>
@@ -22,9 +43,14 @@ export async function POST(req) {
         <td>$${item.price.toLocaleString()}</td>
         <td>$${(item.price * item.quantity).toLocaleString()}</td>
       </tr>
-    `).join("");
+    `
+      )
+      .join("");
 
-    const net = allItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const net = allItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
     const iva = Math.round(net * 0.19);
     const total = net + iva;
     const finalTotal = total + guarantee;

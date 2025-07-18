@@ -24,8 +24,8 @@ export default function RootLayout({ children }) {
     <html lang="es">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
