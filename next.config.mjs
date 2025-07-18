@@ -1,4 +1,12 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
+// next.config.js
+const nextConfig = {
+  webpack(config, options) {
+    config.module.rules.push({
+      test: /\.map$/,
+      use: 'ignore-loader',
+    });
+    return config;
+  },
+};
 
-export default nextConfig;
+module.exports = nextConfig;
