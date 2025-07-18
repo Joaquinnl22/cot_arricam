@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cotización Arriendo</title>
+  <style>
+    @page {
+      margin: 40px 40px;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      padding: 0;
+      color: #000;
+      position: relative;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      border-bottom: 3px solid black;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      border-top: 3px solid black;
+    }
+
+    .orange-bar {
+      background-color: #D35400; /* naranja oscuro */
+      color: white;
+      padding: 10px 20px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 30px;
+    }
+
+    main {
+      margin-top: 80px;
+      margin-bottom: 50px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .logo {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .logo img {
+      height: 60px;
+    }
+
+    .info, .table, .footer-content {
+      margin-top: 20px;
+    }
+
+    .info-table td {
+      padding: 4px 8px;
+    }
+
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .details-table th, .details-table td {
+      border: 1px solid #000;
+      padding: 6px;
+      text-align: left;
+    }
+
+    .details-table th {
+      background-color: #f0f0f0;
+    }
+
+    .section-title {
+      margin-top: 30px;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    .observaciones, .condiciones {
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Encabezado -->
+  <header>
+    <div class="orange-bar">
+      <span>ARRICAM SPA</span>
+      <span>{{date}}</span>
+    </div>
+  </header>
+
+  <!-- Pie de página -->
+  <footer></footer>
+
+  <!-- Contenido principal -->
+  <main>
+    <div class="logo">
+      <!-- Asegúrate que el logo esté disponible en esa ruta o usa base64 -->
+      <img src="https://arricam.cl/wp-content/uploads/2024/05/logo-arricam-color.png" alt="Logo Arricam">
+    </div>
+
+    <h1>COTIZACIÓN ARRIENDO</h1>
+    <h2>ARRICAM SPA</h2>
+    <p style="text-align:center;">Bodega: Camino Lonquén Parcela 48, Maipú<br/>
+    Fono: 225356022 - 225356031</p>
+
+    <div class="info">
+      <table class="info-table">
+        <tr><td><strong>Fecha:</strong></td><td>{{date}}</td></tr>
+        <tr><td><strong>Cotización N°:</strong></td><td>{{quoteNumber}}</td></tr>
+        <tr><td><strong>Nombre:</strong></td><td>{{clientName}}</td></tr>
+        <tr><td><strong>Empresa:</strong></td><td>{{company}}</td></tr>
+      </table>
+    </div>
+
+    <div class="table">
+      <h3 class="section-title">Ítem - Descripción y Valores</h3>
+      <table class="details-table">
+        <thead>
+          <tr>
+            <th>Ítem</th>
+            <th>Descripción</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{items}}
+        </tbody>
+      </table>
+
+      <table style="margin-top: 20px;">
+        <tr><td><strong>Neto:</strong></td><td>${{net}}</td></tr>
+        <tr><td><strong>IVA (19%):</strong></td><td>${{iva}}</td></tr>
+        <tr><td><strong>Total:</strong></td><td>${{total}}</td></tr>
+        <tr><td><strong>Garantía:</strong></td><td>${{guarantee}}</td></tr>
+        <tr><td><strong>Total Pago:</strong></td><td>${{finalTotal}}</td></tr>
+      </table>
+    </div>
+       <!-- Salto a página 2 -->
+    <div class="page-break"></div>
+
+    <div class="observaciones">
+      <h3 class="section-title">Observaciones</h3>
+      ***NOTA: LOS VALORES DEL ARRIENDO SON FIJOS POR UN AÑO, PUEDE QUE SE REAJUSTE SI PASA DE ESTE TIEMPO.  
+      ******EL FLETE DE RETORNO PUEDE SUFRIR ALGUNA VARIACIÓN SU COSTO AL MOMENTO DEL RETIRO DESPUES DE UN AÑO,
+SE LE COMUNICARA AL MOMENTO DE SOLICITAR EL RETIRO LA DIFERENCIA A CANCELAR***
+      {{notes}}
+    </div>
+
+ 
+
+    <!-- Página 2: Condiciones -->
+    <div class="condiciones">
+      <h3 class="section-title">2. CONDICIONES COMERCIALES</h3>
+      RESERVA MEDIANTE ORDEN DE COMPRA, INDICANDO VALORES, CANTIDADES Y DETALLE DE EQUIPOS ARRENDADOS,
+FIRMA CONTRATO Y PAGO CONTADO DE LO COTIZADO.  
+      REVISIÓN DE ANTECEDENTES, ADJUNTAR LA SIGUIENTE INFORMACIÓN COMERCIAL:
+      ▪ Carpeta Tributaria para Obtención de crédito (Completa) 24 Meses
+      ▪ Escritura de la sociedad con poderes vigentes de representante legal
+      ▪ Fotocopia Cédula de Identidad Representante legal y fotocopia. Rut empresa
+      ▪ Antecedentes Bancarios: Banco y Cta. Cte. Con que opera 
+      ▪ Si el o los módulos instalarán se en obras de terceros, adjuntar copia del contrato de presentación de servicios.  
+      ▪ Contrato con empresa, en la que se instalarán los equipos 
+
+      OTROS:  
+      ▪ Tiempo Mínimo Arriendo: En RM 3 meses, fuera de Santiago y Regiones, 6 meses.
+      ▪ Lugar de entrega: SANTIAGO 
+      ▪ Forma de Pago: Contado, Mensual, Garantía, Fletes ida y regreso del o los equipos
+      ▪ Flete: traslado y descarga
+      ▪ Conexiones: La empresa ARRICAM no ejecutara el servicio de empalme eléctrico y conexiones sanitarias. 
+      ▪ Plazo de entrega: a convenir 
+      ▪ Disponibilidad: Sujeta a stock 
+    </div>
+
+    <div class="footer-content">
+      <h3 class="section-title">Observaciones para evitar cargos adicionales</h3>
+      ▪ No modificar ni intervenir muros, puertas, techo, cielo y piso. El módulo debe entregarse en las mismas condiciones que se entregó para
+no aplicar cargos en reparaciones.
+      ▪ Los módulos deben ser entregados limpios, sin residuos, mobiliarios y/o excedentes. En caso de módulo batería de baño, debe estar
+limpio, desinfectado, con sus descargas evacuadas y vacías, de lo contrario, se procederá al no retiro del módulo, lo que implica igual
+cobro de flete, y se solicitará nuevo pago para el siguiente retiro.
+      ▪ No se puede trasladar los módulos entre obras, ni otros lugares sin previa autorización de jefatura nuestra empresa Arricam.
+      ▪ El terreno donde se instalen los equipos debe estar despejado y nivelado para su correcto funcionamiento. 
+      ▪ Las llaves deben volver con la unidad, de lo contrario se procede a la cobranza por cambio de cerradura.
+      ▪ De haber retraso en la recepción de los módulos, el camión esperará como máximo 30 minutos, luego de ese tiempo se procederá al
+cobro por hora.
+
+      <h3 class="section-title">Datos para orden de compra y pago</h3>
+      RAZÓN SOCIAL: COMERCIALIZADORA Y ARRIENDOS ARRICAM SPA  
+      RUT: 76.050.457-2  
+      DIRECCIÓN: LUMIERE 0280, MAIPÚ  
+      GIRO: COMERCIALIZAR Y ARRENDAR CONTAINERS Y MÓDULOS  
+      BANCO DE CHILE  
+      CUENTA CORRIENTE: 168-06824-09  
+      ENVIAR COMPROBANTE A: ARRICAMSPA@GMAIL.COM
+
+      <p style="margin-top:20px;">Quedamos a su disposición para cualquier consulta</p>
+      <p><strong>ALEJANDRA CASTRO</strong></p>
+    </div>
+  </main>
+</body>
+</html>
