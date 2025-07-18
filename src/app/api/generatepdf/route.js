@@ -6,7 +6,7 @@ export async function POST(req) {
   try {
     const { type, date, client, company, quoteNumber, items = [], dispatch = 0, guarantee = 0 } = await req.json();
 
-    const templatePath = join(process.cwd(), "templates", `${type}.template.html`);
+    const templatePath = join(process.cwd(), "public", "templates", `${type}.template.html`);
     let html = readFileSync(templatePath, "utf8");
 
     const allItems = [...items];
