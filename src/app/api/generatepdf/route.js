@@ -1,9 +1,14 @@
 import { join } from "path";
 import { readFileSync } from "fs";
-import puppeteer from "puppeteer";
+import chromium from "chrome-aws-lambda";
+import puppeteer from "puppeteer-core";
+
+export const maxDuration = 60; // Aumenta el tiempo de ejecución permitido en Vercel
 
 export async function POST(req) {
   try {
+    console.log("📥 Iniciando generación de PDF");
+
     const {
       type,
       date,
@@ -15,9 +20,6 @@ export async function POST(req) {
       guarantee = 0,
     } = await req.json();
 
-    console.log("🔧 Recibido tipo:", type);
-    console.log("🔧 Items:", items.length, items);
-
     const templatePath = join(
       process.cwd(),
       "public",
@@ -25,7 +27,7 @@ export async function POST(req) {
       `${type}.template.html`
     );
 
-    console.log("📄 Cargando template desde:", templatePath);
+    console.log("🧾 Template path:", templatePath);
 
     let html;
     try {
@@ -79,16 +81,20 @@ export async function POST(req) {
       .replace(/{{guarantee}}/g, guarantee.toLocaleString())
       .replace(/{{finalTotal}}/g, finalTotal.toLocaleString());
 
-    console.log("✅ Template procesado, iniciando puppeteer");
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath || '/usr/bin/chromium-browser',
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    });
 
-    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: "load" }); // Más rápido que "networkidle0"
 
     const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
     await browser.close();
 
-    console.log("📄 PDF generado correctamente");
+    console.log("✅ PDF generado correctamente");
 
     return new Response(pdfBuffer, {
       status: 200,
