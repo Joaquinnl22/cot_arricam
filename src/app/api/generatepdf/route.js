@@ -15,13 +15,28 @@ export async function POST(req) {
       guarantee = 0,
     } = await req.json();
 
+    console.log("🔧 Recibido tipo:", type);
+    console.log("🔧 Items:", items.length, items);
+
     const templatePath = join(
       process.cwd(),
       "public",
       "templates",
       `${type}.template.html`
     );
-    const html = readFileSync(templatePath, "utf8");
+
+    console.log("📄 Cargando template desde:", templatePath);
+
+    let html;
+    try {
+      html = readFileSync(templatePath, "utf8");
+    } catch (err) {
+      console.error("❌ No se pudo leer el archivo:", err);
+      return new Response(
+        JSON.stringify({ message: "Template no encontrado", error: err.message }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const allItems = [...items];
     if (dispatch > 0) {
@@ -36,21 +51,18 @@ export async function POST(req) {
     const itemsHtml = allItems
       .map(
         (item) => `
-      <tr>
-        <td>${item.name}</td>
-        <td>${item.description || "-"}</td>
-        <td>${item.quantity}</td>
-        <td>$${item.price.toLocaleString()}</td>
-        <td>$${(item.price * item.quantity).toLocaleString()}</td>
-      </tr>
-    `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.description || "-"}</td>
+          <td>${item.quantity}</td>
+          <td>$${item.price.toLocaleString()}</td>
+          <td>$${(item.price * item.quantity).toLocaleString()}</td>
+        </tr>
+      `
       )
       .join("");
 
-    const net = allItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    const net = allItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const iva = Math.round(net * 0.19);
     const total = net + iva;
     const finalTotal = total + guarantee;
@@ -67,12 +79,16 @@ export async function POST(req) {
       .replace(/{{guarantee}}/g, guarantee.toLocaleString())
       .replace(/{{finalTotal}}/g, finalTotal.toLocaleString());
 
+    console.log("✅ Template procesado, iniciando puppeteer");
+
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
     const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
     await browser.close();
+
+    console.log("📄 PDF generado correctamente");
 
     return new Response(pdfBuffer, {
       status: 200,
@@ -82,7 +98,7 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    console.error("Error generando PDF:", error);
+    console.error("❌ Error generando PDF:", error);
     return new Response(
       JSON.stringify({ message: "Error al generar PDF", error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
