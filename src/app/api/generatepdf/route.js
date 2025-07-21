@@ -83,13 +83,13 @@ export async function POST(req) {
 
     const browser = await puppeteer.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath || '/usr/bin/chromium-browser',
+      executablePath: await chromium.executablePath,
       headless: chromium.headless,
       defaultViewport: chromium.defaultViewport,
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "load" }); // Más rápido que "networkidle0"
+    await page.setContent(html, { waitUntil: "load" });
 
     const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
     await browser.close();
