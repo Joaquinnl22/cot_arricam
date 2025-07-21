@@ -14,36 +14,46 @@ const QuotePage = () => {
   const [tipoCotizacion, setTipoCotizacion] = useState("venta");
   const [items, setItems] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("");
-  const [customItem, setCustomItem] = useState({ name: "", price: 0 });
+  const [customItem, setCustomItem] = useState({
+    name: "",
+    price: 0,
+    description: "",
+  });
   const [products, setProducts] = useState([]);
   const [guarantee, setGuarantee] = useState(0);
   const [dispatch, setDispatch] = useState(0);
+  const [contador, setContador] = useState(null);
+  const [persona, setPersona] = useState("paola");
+  const personaData = {
+    paola: { nombre: "Paola Hernandez", telefono: "+569 5816 8818" },
+    alejandra: { nombre: "Alejandra Castro", telefono: "+569 5816 8819" },
+  }[persona];
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("/api/productos");
+      if (!res.ok) {
+        console.error(
+          "❌ Error al obtener productos:",
+          res.status,
+          res.statusText
+        );
+        return;
+      }
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setProducts(data);
+      } else {
+        console.error("Respuesta inválida:", data);
+      }
+    } catch (error) {
+      console.error("Error cargando productos:", error);
+    }
+  };
 
   useEffect(() => {
-    console.log("🔗 API:", process.env.NEXT_PUBLIC_PDF_API); // Se ejecuta en el navegador
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch("/api/productos"); // ✅ Usa el endpoint correcto
-        if (!res.ok) {
-          console.error(
-            "❌ Error al obtener productos:",
-            res.status,
-            res.statusText
-          );
-          return;
-        }
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          console.error("Respuesta inválida:", data);
-        }
-      } catch (error) {
-        console.error("Error cargando productos:", error);
-      }
-    };
-
     fetchProducts();
+    fetchContador();
   }, []);
 
   const filteredProducts = products.filter((p) => p.estado === tipoCotizacion);
@@ -88,6 +98,12 @@ const QuotePage = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadPDF = async () => {
+    if (!tipoCotizacion) {
+      alert("Tipo de cotización no definido");
+      setIsDownloading(false);
+      return;
+    }
+
     setIsDownloading(true);
     try {
       const res = await fetch(
@@ -104,14 +120,20 @@ const QuotePage = () => {
             items,
             guarantee,
             dispatch,
+            responsable: personaData.nombre,
+            telefono: personaData.telefono,
           }),
         }
       );
 
       if (!res.ok) {
         alert("Error al generar PDF");
+        setIsDownloading(false);
         return;
       }
+
+      await fetch("/api/contador", { method: "PATCH" });
+      setContador((prev) => prev + 1);
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -128,6 +150,33 @@ const QuotePage = () => {
       setIsDownloading(false);
     }
   };
+
+  // Al cargar página, traemos número actual
+
+  async function fetchContador() {
+    try {
+      const res = await fetch("/api/contador");
+      const data = await res.json();
+      setForm((f) => ({ ...f, quoteNumber: data.valor?.toString() || "2500" }));
+    } catch (error) {
+      console.error("❌ Error obteniendo contador", error);
+    }
+  }
+
+  // Ajustar garantía automáticamente
+  useEffect(() => {
+    if (tipoCotizacion === "arriendo") {
+      const containerCount = items.reduce((sum, item) => {
+        return (
+          sum +
+          (item.name.toLowerCase().includes("container") ? item.quantity : 0)
+        );
+      }, 0);
+      setGuarantee(containerCount * 350000);
+    } else {
+      setGuarantee(0);
+    }
+  }, [tipoCotizacion, items]);
 
   const resetForm = () => {
     setForm({
@@ -173,6 +222,19 @@ const QuotePage = () => {
               onChange={(e) => setForm({ ...form, client: e.target.value })}
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
+          </div>
+          <div className="mb-6">
+            <label className="font-medium text-gray-700 mr-4">
+              Responsable:
+            </label>
+            <select
+              value={persona}
+              onChange={(e) => setPersona(e.target.value)}
+              className="border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              <option value="paola">Paola (12345678)</option>
+              <option value="alejandra">Alejandra (87654321)</option>
+            </select>
           </div>
 
           <div className="mb-6">
@@ -229,6 +291,20 @@ const QuotePage = () => {
                   className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
+              <div className="w-full md:flex-1">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Descripción
+  </label>
+  <input
+    placeholder="Descripción del producto"
+    value={customItem.description}
+    onChange={(e) =>
+      setCustomItem({ ...customItem, description: e.target.value })
+    }
+    className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+  />
+</div>
+
               <div className="w-full md:w-40">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Precio
@@ -306,21 +382,23 @@ const QuotePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex gap-6">
-              <div className="flex flex-col">
-                <label className="mb-1 font-semibold text-gray-700">
-                  Garantía
-                </label>
-                <input
-                  type="number"
-                  value={guarantee === 0 ? "" : guarantee}
-                  onChange={(e) =>
-                    setGuarantee(
-                      e.target.value === "" ? 0 : parseInt(e.target.value)
-                    )
-                  }
-                  className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
-                />
-              </div>
+              {tipoCotizacion === "arriendo" && (
+                <div className="flex flex-col">
+                  <label className="mb-1 font-semibold text-gray-700">
+                    Garantía
+                  </label>
+                  <input
+                    type="number"
+                    value={guarantee === 0 ? "" : guarantee}
+                    onChange={(e) =>
+                      setGuarantee(
+                        e.target.value === "" ? 0 : parseInt(e.target.value)
+                      )
+                    }
+                    className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
+                  />
+                </div>
+              )}
               <div className="flex flex-col">
                 <label className="mb-1 font-semibold text-gray-700">
                   Despacho

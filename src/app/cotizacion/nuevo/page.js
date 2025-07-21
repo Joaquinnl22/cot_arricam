@@ -16,7 +16,7 @@ export default function ProductosPage() {
   }, []);
 
   const fetchProductos = async () => {
-        console.log("🔗 API:", process.env.NEXT_PUBLIC_PDF_API); // Se ejecuta en el navegador
+    console.log("🔗 API:", process.env.NEXT_PUBLIC_PDF_API); // Se ejecuta en el navegador
     try {
       const res = await fetch("/api/productos");
       const data = await res.json();
@@ -161,7 +161,10 @@ export default function ProductosPage() {
                     </p>
                   </div>
                   <div className="text-right font-semibold text-gray-700">
-                    ${prod.precio.toFixed(2)}
+                    {new Intl.NumberFormat("es-CL", {
+                      style: "currency",
+                      currency: "CLP",
+                    }).format(prod.precio)}
                   </div>
                 </div>
               </li>
