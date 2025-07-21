@@ -77,6 +77,26 @@ const ContractPage = () => {
       currency: "CLP",
       minimumFractionDigits: 0,
     }).format(Number(value) || 0);
+  const handleDownloadDocx = async () => {
+    try {
+      const res = await fetch(
+        "https://arricam-pdf-service.onrender.com/api/plantilla-subarriendo"
+      );
+
+      if (!res.ok) throw new Error("No se pudo descargar el formato en blanco");
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "formato-subarrendamiento.doc";
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("❌ Error al descargar formato: " + err.message);
+    }
+  };
 
   return (
     <>
@@ -186,13 +206,20 @@ const ContractPage = () => {
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex flex-col md:flex-row justify-end gap-4 mt-8">
             <Button
               onClick={handleDownloadPDF}
               disabled={isDownloading}
-              className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50"
+              className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 w-full md:w-auto"
             >
               {isDownloading ? "Generando..." : "📥 Generar Contrato PDF"}
+            </Button>
+
+            <Button
+              onClick={handleDownloadDocx}
+              className="bg-white text-yellow-700 border border-yellow-600 hover:bg-yellow-50 w-full md:w-auto"
+            >
+              📄 Descargar Formato en Blanco (.DOC)
             </Button>
           </div>
         </div>

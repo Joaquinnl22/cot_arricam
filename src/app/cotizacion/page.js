@@ -292,18 +292,21 @@ const QuotePage = () => {
                 />
               </div>
               <div className="w-full md:flex-1">
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Descripción
-  </label>
-  <input
-    placeholder="Descripción del producto"
-    value={customItem.description}
-    onChange={(e) =>
-      setCustomItem({ ...customItem, description: e.target.value })
-    }
-    className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-  />
-</div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descripción
+                </label>
+                <input
+                  placeholder="Descripción del producto"
+                  value={customItem.description  ?? ""}
+                  onChange={(e) =>
+                    setCustomItem({
+                      ...customItem,
+                      description: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
 
               <div className="w-full md:w-40">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
