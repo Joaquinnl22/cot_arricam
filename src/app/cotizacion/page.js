@@ -268,7 +268,7 @@ const QuotePage = () => {
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
             <input
-              placeholder="Cliente"
+              placeholder="Contacto"
               value={form.client}
               onChange={(e) => setForm({ ...form, client: e.target.value })}
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
@@ -414,10 +414,59 @@ const QuotePage = () => {
               <tbody>
                 {items.map((item, i) => (
                   <tr key={i} className="hover:bg-yellow-50 border-b">
-                    <td className="px-4 py-2">
-                      <strong>{item.name}</strong>
-                      {/* descripción y edición */}
+                    <td className="px-4 py-2 align-top">
+                      <strong className="block">{item.name}</strong>
+                      {item.isEditing ? (
+                        <div className="space-y-2 mt-1">
+                          <textarea
+                            value={item.description}
+                            onChange={(e) =>
+                              handleDescChange(i, e.target.value)
+                            }
+                            className="w-full border p-2 rounded text-sm"
+                            rows={3}
+                          />
+                          <input
+                            type="text"
+                            value={item.price.toLocaleString("es-CL")}
+                            onChange={(e) => {
+                              const val = e.target.value
+                                .replace(/\./g, "")
+                                .replace(/\D/g, "");
+                              const parsed = parseInt(val || "0");
+                              setItems((items) =>
+                                items.map((it, idx) =>
+                                  idx === i ? { ...it, price: parsed } : it
+                                )
+                              );
+                            }}
+                            className="w-full border p-2 rounded text-sm"
+                          />
+                          <button
+                            onClick={() => toggleEdit(i, false)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1 rounded shadow transition duration-200"
+                          >
+                            Guardar
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          onDoubleClick={() => toggleEdit(i, true)}
+                          className="mt-1 cursor-pointer text-sm text-gray-700 space-y-1"
+                        >
+                          {item.description.split("\n").map((l, idx) => (
+                            <p key={idx}>• {l}</p>
+                          ))}
+                          <p className="text-gray-500">
+                            Precio: {formatCLP(item.price)}
+                          </p>
+                          <p className="text-xs text-gray-400 italic">
+                            (Doble clic para editar)
+                          </p>
+                        </div>
+                      )}
                     </td>
+
                     <td className="px-4 py-2">
                       <input
                         type="number"
@@ -498,7 +547,7 @@ const QuotePage = () => {
                       setMesGarantia(parseInt(val || "0"));
                       setUserEditedGarantia(true);
                     }}
-                  className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
+                    className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
                   />
                 </div>
               )}
