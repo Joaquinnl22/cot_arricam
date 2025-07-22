@@ -28,10 +28,12 @@ const QuotePage = () => {
     description: "",
   });
   const [products, setProducts] = useState([]);
-  const [guarantee, setGuarantee] = useState(0);
   const [dispatch, setDispatch] = useState(0);
   const [contador, setContador] = useState(null);
   const [persona, setPersona] = useState("paola");
+  const [mesGarantia, setMesGarantia] = useState(0);
+  const [userEditedGarantia, setUserEditedGarantia] = useState(false);
+
   const personaData = {
     paola: { nombre: "Paola Hernandez", telefono: "+569 5816 8818" },
     alejandra: { nombre: "Alejandra Castro", telefono: "+569 5816 8819" },
@@ -78,6 +80,7 @@ const QuotePage = () => {
           price: product.precio,
           quantity: 1,
           description: product.descripcion || "-",
+          mes: tipoCotizacion === "arriendo" ? 1 : undefined,
         },
       ]);
       setSelectedProductId("");
@@ -92,9 +95,10 @@ const QuotePage = () => {
           ...customItem,
           description: customItem.description || "-",
           quantity: 1,
+          mes: tipoCotizacion === "arriendo" ? 1 : undefined,
         },
       ]);
-      setCustomItem({ name: "", price: 0 });
+      setCustomItem({ name: "", price: 0, description: "" });
     }
   };
 
@@ -133,7 +137,7 @@ const QuotePage = () => {
             client: form.client,
             company: form.company,
             items,
-            guarantee,
+            mesGarantia,
             dispatch,
             responsable: personaData.nombre,
             telefono: personaData.telefono,
@@ -155,7 +159,7 @@ const QuotePage = () => {
       const a = document.createElement("a");
       a.href = url;
       const rawQuote = form.quoteNumber || "sin-folio";
-      const safeQuote = rawQuote.replace(/[^\w\d\-_]/g, "_"); 
+      const safeQuote = rawQuote.replace(/[^\w\d\-_]/g, "_");
       a.download = `cotizacion-${safeQuote}.pdf`;
 
       document.body.appendChild(a);
@@ -190,9 +194,12 @@ const QuotePage = () => {
           (item.name.toLowerCase().includes("container") ? item.quantity : 0)
         );
       }, 0);
-      setGuarantee(containerCount * 350000);
+      const sugerida = containerCount * 350000;
+      if (!userEditedGarantia) {
+        setMesGarantia(sugerida);
+      }
     } else {
-      setGuarantee(0);
+      setMesGarantia(0);
     }
   }, [tipoCotizacion, items]);
 
@@ -204,7 +211,7 @@ const QuotePage = () => {
       date: new Date().toISOString().split("T")[0],
     });
     setItems([]);
-    setGuarantee(0);
+    setMesGarantia(0);
     setDispatch(0);
     setCustomItem({ name: "", price: 0 });
     setSelectedProductId("");
@@ -223,6 +230,17 @@ const QuotePage = () => {
         idx === i ? { ...item, description: val } : item
       )
     );
+  };
+  const formatCLP = (value) =>
+    new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      minimumFractionDigits: 0,
+    }).format(Number(value) || 0);
+  const handleMesChange = (index, value) => {
+    const updated = [...items];
+    updated[index].mes = Math.max(parseInt(value) || 1, 1);
+    setItems(updated);
   };
 
   return (
@@ -385,6 +403,9 @@ const QuotePage = () => {
                 <tr>
                   <th className="px-4 py-2 text-left">Producto</th>
                   <th className="px-4 py-2 text-left">Cantidad</th>
+                  {tipoCotizacion === "arriendo" && (
+                    <th className="px-4 py-2 text-left">Meses</th>
+                  )}
                   <th className="px-4 py-2 text-left">Precio Unitario</th>
                   <th className="px-4 py-2 text-left">Subtotal</th>
                   <th className="px-4 py-2"></th>
@@ -395,34 +416,7 @@ const QuotePage = () => {
                   <tr key={i} className="hover:bg-yellow-50 border-b">
                     <td className="px-4 py-2">
                       <strong>{item.name}</strong>
-                      <div className="mt-1">
-                        {item.isEditing ? (
-                          <>
-                            <textarea
-                              value={item.description || ""}
-                              onChange={(e) =>
-                                handleDescChange(i, e.target.value)
-                              }
-                              className="w-full border p-1 rounded mt-1"
-                              rows={3}
-                            />
-                            <button
-                              onClick={() => toggleEdit(i, false)}
-                              className="mt-1 bg-green-100 text-green-800 px-2 py-1 rounded text-sm"
-                            >
-                              Guardar
-                            </button>
-                          </>
-                        ) : (
-                          <div onDoubleClick={() => toggleEdit(i, true)}>
-                            {item.description?.split("\n").map((line, idx) => (
-                              <p key={idx} className="text-gray-600 text-sm">
-                                • {line}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {/* descripción y edición */}
                     </td>
                     <td className="px-4 py-2">
                       <input
@@ -435,11 +429,27 @@ const QuotePage = () => {
                         className="w-20 px-2 py-1 border border-gray-300 rounded"
                       />
                     </td>
+                    {tipoCotizacion === "arriendo" && (
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.mes || 1}
+                          onChange={(e) => handleMesChange(i, e.target.value)}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-2">
                       ${item.price.toLocaleString()}
                     </td>
                     <td className="px-4 py-2">
-                      ${(item.price * item.quantity).toLocaleString()}
+                      $
+                      {(
+                        item.price *
+                        item.quantity *
+                        (item.mes || 1)
+                      ).toLocaleString()}
                     </td>
                     <td className="px-4 py-2">
                       <button
@@ -458,26 +468,41 @@ const QuotePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex gap-6">
               {tipoCotizacion === "arriendo" && (
-                <div className="flex flex-col">
+                <div className="flex flex-col w-full md:w-1/2">
                   <label className="mb-1 font-semibold text-gray-700">
-                    Garantía
+                    Garantía sugerida:
+                    <span className="text-gray-600 ml-1">
+                      {formatCLP(
+                        items.reduce(
+                          (sum, item) =>
+                            item.name.toLowerCase().includes("container")
+                              ? sum + item.quantity * 350000
+                              : sum,
+                          0
+                        )
+                      )}
+                    </span>
                   </label>
                   <input
                     type="text"
-                    inputMode="numeric"
+                    name="mesGarantia"
                     value={
-                      guarantee === 0 ? "" : guarantee.toLocaleString("es-CL")
+                      mesGarantia === 0
+                        ? ""
+                        : mesGarantia.toLocaleString("es-CL")
                     }
                     onChange={(e) => {
                       const val = e.target.value
                         .replace(/\./g, "")
                         .replace(/\D/g, "");
-                      setGuarantee(parseInt(val || "0"));
+                      setMesGarantia(parseInt(val || "0"));
+                      setUserEditedGarantia(true);
                     }}
-                    className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
+                  className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
                   />
                 </div>
               )}
+
               <div className="flex flex-col">
                 <label className="mb-1 font-semibold text-gray-700">
                   Despacho
@@ -502,9 +527,15 @@ const QuotePage = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8">
             <div className="text-xl font-semibold text-gray-700">
               Total: $
-              {items
-                .reduce((acc, item) => acc + item.price * item.quantity, 0)
-                .toLocaleString()}
+              {(
+                items.reduce(
+                  (acc, item) =>
+                    acc + item.price * item.quantity * (item.mes || 1),
+                  0
+                ) +
+                (mesGarantia || 0) +
+                (dispatch || 0)
+              ).toLocaleString("es-CL")}
             </div>
             <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
               <Button
