@@ -154,15 +154,9 @@ const QuotePage = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const disposition = res.headers.get("Content-Disposition");
-      let filename = "cotizacion.pdf";
-
-      if (disposition && disposition.includes("filename=")) {
-        const match = disposition.match(/filename="?([^"]+)"?/);
-        if (match?.[1]) filename = match[1];
-      }
-
-      a.download = filename;
+      const rawQuote = form.quoteNumber || "sin-folio";
+      const safeQuote = rawQuote.replace(/[^\w\d\-_]/g, "_"); 
+      a.download = `cotizacion-${safeQuote}.pdf`;
 
       document.body.appendChild(a);
       a.click();
