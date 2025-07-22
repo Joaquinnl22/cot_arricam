@@ -152,7 +152,7 @@ const QuotePage = () => {
       }
 
       await fetch("/api/contador", { method: "PATCH" });
-      setContador((prev) => prev + 1);
+      setContador((prev) => prev + 10);
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
