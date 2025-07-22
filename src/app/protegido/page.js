@@ -34,7 +34,7 @@ export default function HomePage() {
         <section className="mt-20 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
           <Link href="/cotizacion">
             <div className="bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 shadow-lg rounded-xl p-8 text-center cursor-pointer transition-all duration-200">
-              <h2 className="text-2xl font-bold text-yellow-700 mb-3">🧾 Cotizaciones</h2>
+              <h2 className="text-2xl font-bold text-yellow-700 mb-3">🧾 Cotizaciones para Arricam</h2>
               <p className="text-gray-700">
                 Crea, edita o descarga cotizaciones para tus clientes de forma rápida.
               </p>
@@ -43,7 +43,7 @@ export default function HomePage() {
 
           <Link href="/contratos">
             <div className="bg-blue-100 hover:bg-blue-200 border border-blue-300 shadow-lg rounded-xl p-8 text-center cursor-pointer transition-all duration-200">
-              <h2 className="text-2xl font-bold text-blue-700 mb-3">📄 Arriendo</h2>
+              <h2 className="text-2xl font-bold text-blue-700 mb-3">📄 Contratos de sitios</h2>
               <p className="text-gray-700">
                 Gestiona contratos de subarriendo y genera documentos oficiales.
               </p>
