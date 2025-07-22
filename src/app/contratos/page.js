@@ -1,7 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import Navbar from "../../components/Navbar/NavBar";
+
+
+const Contract = () => {
+  useEffect(() => {
+    fetch("https://arricam-pdf-service.onrender.com/")
+      .then(() => console.log("🔄 API de Render activada"))
+      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
+  }, [])};
 
 const ContractPage = () => {
   const [form, setForm] = useState({
@@ -16,6 +24,7 @@ const ContractPage = () => {
     reajustePorcentaje: "",
     mesGarantia: "",
   });
+
 
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -217,7 +226,7 @@ const ContractPage = () => {
 
             <Button
               onClick={handleDownloadDocx}
-              className="bg-white text-yellow-700 border border-yellow-600 hover:bg-yellow-50 w-full md:w-auto"
+              className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 w-full md:w-auto"
             >
               📄 Descargar Formato en Blanco (.DOC)
             </Button>

@@ -3,6 +3,14 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button"; // Asegúrate de que el path sea correcto
 import Navbar from "../../components/Navbar/NavBar";
 
+const Cotizacion = () => {
+  useEffect(() => {
+    fetch("https://arricam-pdf-service.onrender.com/")
+      .then(() => console.log("🔄 API de Render activada"))
+      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
+  }, []);
+};
+
 const QuotePage = () => {
   const [form, setForm] = useState({
     company: "",
@@ -78,7 +86,14 @@ const QuotePage = () => {
 
   const handleAddCustom = () => {
     if (customItem.name && customItem.price > 0) {
-      setItems((prev) => [...prev, { ...customItem, quantity: 1 }]);
+      setItems((prev) => [
+        ...prev,
+        {
+          ...customItem,
+          description: customItem.description || "-",
+          quantity: 1,
+        },
+      ]);
       setCustomItem({ name: "", price: 0 });
     }
   };
@@ -191,6 +206,21 @@ const QuotePage = () => {
     setCustomItem({ name: "", price: 0 });
     setSelectedProductId("");
   };
+  // Cambia la edición de un item
+  const toggleEdit = (i, val) => {
+    setItems((items) =>
+      items.map((item, idx) => (idx === i ? { ...item, isEditing: val } : item))
+    );
+  };
+
+  // Actualiza la descripción de un item
+  const handleDescChange = (i, val) => {
+    setItems((items) =>
+      items.map((item, idx) =>
+        idx === i ? { ...item, description: val } : item
+      )
+    );
+  };
 
   return (
     <>
@@ -295,9 +325,9 @@ const QuotePage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Descripción
                 </label>
-                <input
-                  placeholder="Descripción del producto"
-                  value={customItem.description  ?? ""}
+                <textarea
+                  placeholder="Escribe una línea por cada punto"
+                  value={customItem.description ?? ""}
                   onChange={(e) =>
                     setCustomItem({
                       ...customItem,
@@ -305,6 +335,7 @@ const QuotePage = () => {
                     })
                   }
                   className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  rows={3}
                 />
               </div>
 
@@ -313,15 +344,23 @@ const QuotePage = () => {
                   Precio
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Precio"
-                  value={customItem.price === 0 ? "" : customItem.price}
-                  onChange={(e) =>
+                  value={
+                    customItem.price === 0
+                      ? ""
+                      : customItem.price.toLocaleString("es-CL")
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value
+                      .replace(/\./g, "")
+                      .replace(/\D/g, "");
                     setCustomItem({
                       ...customItem,
-                      price: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      price: parseInt(val || "0"),
+                    });
+                  }}
                   className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
@@ -351,7 +390,37 @@ const QuotePage = () => {
               <tbody>
                 {items.map((item, i) => (
                   <tr key={i} className="hover:bg-yellow-50 border-b">
-                    <td className="px-4 py-2">{item.name}</td>
+                    <td className="px-4 py-2">
+                      <strong>{item.name}</strong>
+                      <div className="mt-1">
+                        {item.isEditing ? (
+                          <>
+                            <textarea
+                              value={item.description || ""}
+                              onChange={(e) =>
+                                handleDescChange(i, e.target.value)
+                              }
+                              className="w-full border p-1 rounded mt-1"
+                              rows={3}
+                            />
+                            <button
+                              onClick={() => toggleEdit(i, false)}
+                              className="mt-1 bg-green-100 text-green-800 px-2 py-1 rounded text-sm"
+                            >
+                              Guardar
+                            </button>
+                          </>
+                        ) : (
+                          <div onDoubleClick={() => toggleEdit(i, true)}>
+                            {item.description?.split("\n").map((line, idx) => (
+                              <p key={idx} className="text-gray-600 text-sm">
+                                • {line}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-2">
                       <input
                         type="number"
@@ -391,13 +460,17 @@ const QuotePage = () => {
                     Garantía
                   </label>
                   <input
-                    type="number"
-                    value={guarantee === 0 ? "" : guarantee}
-                    onChange={(e) =>
-                      setGuarantee(
-                        e.target.value === "" ? 0 : parseInt(e.target.value)
-                      )
+                    type="text"
+                    inputMode="numeric"
+                    value={
+                      guarantee === 0 ? "" : guarantee.toLocaleString("es-CL")
                     }
+                    onChange={(e) => {
+                      const val = e.target.value
+                        .replace(/\./g, "")
+                        .replace(/\D/g, "");
+                      setGuarantee(parseInt(val || "0"));
+                    }}
                     className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
                   />
                 </div>
@@ -406,14 +479,17 @@ const QuotePage = () => {
                 <label className="mb-1 font-semibold text-gray-700">
                   Despacho
                 </label>
+
                 <input
-                  type="number"
-                  value={dispatch === 0 ? "" : dispatch}
-                  onChange={(e) =>
-                    setDispatch(
-                      e.target.value === "" ? 0 : parseInt(e.target.value)
-                    )
-                  }
+                  type="text"
+                  inputMode="numeric"
+                  value={dispatch === 0 ? "" : dispatch.toLocaleString("es-CL")}
+                  onChange={(e) => {
+                    const val = e.target.value
+                      .replace(/\./g, "")
+                      .replace(/\D/g, "");
+                    setDispatch(parseInt(val || "0"));
+                  }}
                   className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
                 />
               </div>
