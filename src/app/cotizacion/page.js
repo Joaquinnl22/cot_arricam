@@ -17,6 +17,7 @@ const QuotePage = () => {
     quoteNumber: "",
     client: "",
     date: new Date().toISOString().split("T")[0],
+    city: "", // <-- nuevo campo
   });
 
   const [tipoCotizacion, setTipoCotizacion] = useState("venta");
@@ -137,6 +138,7 @@ const QuotePage = () => {
             client: form.client,
             company: form.company,
             items,
+            city: form.city,
             mesGarantia,
             dispatch,
             responsable: personaData.nombre,
@@ -271,6 +273,12 @@ const QuotePage = () => {
               placeholder="Contacto"
               value={form.client}
               onChange={(e) => setForm({ ...form, client: e.target.value })}
+              className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            />
+            <input
+              placeholder="Ciudad de despacho"
+              value={form.city}
+              onChange={(e) => setForm({ ...form, city: e.target.value })}
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
