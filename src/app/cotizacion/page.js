@@ -342,7 +342,7 @@ const QuotePage = () => {
 
             <input
               type="tel"
-              placeholder="Contacto"
+              placeholder="Numero"
               value={form.contacto}
               onChange={(e) => {
                 const soloNumeros = e.target.value.replace(/\D/g, "");
