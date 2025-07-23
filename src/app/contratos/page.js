@@ -4,12 +4,6 @@ import { Button } from "../../components/ui/button";
 import Navbar from "../../components/Navbar/NavBar";
 
 
-const Contract = () => {
-  useEffect(() => {
-    fetch("https://arricam-pdf-service.onrender.com/")
-      .then(() => console.log("🔄 API de Render activada"))
-      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
-  }, [])};
 
 const ContractPage = () => {
   const [form, setForm] = useState({
@@ -24,7 +18,11 @@ const ContractPage = () => {
     reajustePorcentaje: "",
     mesGarantia: "",
   });
-
+  useEffect(() => {
+    fetch("https://arricam-pdf-service.onrender.com/")
+      .then(() => console.log("🔄 API de Render activada"))
+      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
+  }, []);
 
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -98,7 +96,7 @@ const ContractPage = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "formato-subarrendamiento.doc";
+      a.download = "formato-subarrendamiento.docx";
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
@@ -131,7 +129,7 @@ const ContractPage = () => {
               />
               <input
                 name="rutSubarrendataria"
-                placeholder="Rol de la empresa"
+                placeholder="RUT de la empresa"
                 value={form.rutSubarrendataria}
                 onChange={handleChange}
                 className="input"

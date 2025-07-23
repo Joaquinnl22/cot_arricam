@@ -1,15 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Button } from "../../components/ui/button"; // Asegúrate de que el path sea correcto
+import { Button } from "../../components/ui/button";
 import Navbar from "../../components/Navbar/NavBar";
 
-const Cotizacion = () => {
-  useEffect(() => {
-    fetch("https://arricam-pdf-service.onrender.com/")
-      .then(() => console.log("🔄 API de Render activada"))
-      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
-  }, []);
-};
+
+
 
 const QuotePage = () => {
   const [form, setForm] = useState({
@@ -17,8 +12,15 @@ const QuotePage = () => {
     quoteNumber: "",
     client: "",
     date: new Date().toISOString().split("T")[0],
-    city: "", // <-- nuevo campo
+    city: "",
+    plano: "",
+    condiciones: "",
   });
+  useEffect(() => {
+  fetch("https://arricam-pdf-service.onrender.com/")
+    .then(() => console.log("🔄 API activada"))
+    .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
+}, []);
 
   const [tipoCotizacion, setTipoCotizacion] = useState("venta");
   const [items, setItems] = useState([]);
@@ -34,6 +36,7 @@ const QuotePage = () => {
   const [persona, setPersona] = useState("paola");
   const [mesGarantia, setMesGarantia] = useState(0);
   const [userEditedGarantia, setUserEditedGarantia] = useState(false);
+  const [showCustomProduct, setShowCustomProduct] = useState(false);
 
   const personaData = {
     paola: { nombre: "Paola Hernandez", telefono: "+569 5816 8818" },
@@ -72,7 +75,7 @@ const QuotePage = () => {
   const handleAddProduct = () => {
     const product = products.find(
       (p) => p._id?.toString() === selectedProductId
-    ); // ✅ Comparar por _id
+    );
     if (product) {
       setItems((prev) => [
         ...prev,
@@ -82,6 +85,7 @@ const QuotePage = () => {
           quantity: 1,
           description: product.descripcion || "-",
           mes: tipoCotizacion === "arriendo" ? 1 : undefined,
+          image: null, // Nuevo campo para imagen
         },
       ]);
       setSelectedProductId("");
@@ -97,6 +101,7 @@ const QuotePage = () => {
           description: customItem.description || "-",
           quantity: 1,
           mes: tipoCotizacion === "arriendo" ? 1 : undefined,
+          image: null, // Nuevo campo para imagen
         },
       ]);
       setCustomItem({ name: "", price: 0, description: "" });
@@ -112,6 +117,29 @@ const QuotePage = () => {
   const handleRemoveItem = (index) => {
     const updated = [...items];
     updated.splice(index, 1);
+    setItems(updated);
+  };
+
+  // Nueva función para manejar la subida de imágenes por item
+  const handleImageUpload = async (e, index) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const resizedImage = await resizeImage(file, 400); // Redimensionar a 400px de ancho
+      const updated = [...items];
+      updated[index].image = resizedImage;
+      setItems(updated);
+    } catch (error) {
+      console.error("Error al procesar imagen:", error);
+      alert("Error al procesar la imagen");
+    }
+  };
+
+  // Función para remover imagen de un item
+  const handleRemoveImage = (index) => {
+    const updated = [...items];
+    updated[index].image = null;
     setItems(updated);
   };
 
@@ -143,6 +171,8 @@ const QuotePage = () => {
             dispatch,
             responsable: personaData.nombre,
             telefono: personaData.telefono,
+            plano: form.plano,
+            condiciones: form.condiciones,
           }),
         }
       );
@@ -175,8 +205,6 @@ const QuotePage = () => {
     }
   };
 
-  // Al cargar página, traemos número actual
-
   async function fetchContador() {
     try {
       const res = await fetch("/api/contador");
@@ -187,7 +215,6 @@ const QuotePage = () => {
     }
   }
 
-  // Ajustar garantía automáticamente
   useEffect(() => {
     if (tipoCotizacion === "arriendo") {
       const containerCount = items.reduce((sum, item) => {
@@ -218,14 +245,13 @@ const QuotePage = () => {
     setCustomItem({ name: "", price: 0 });
     setSelectedProductId("");
   };
-  // Cambia la edición de un item
+
   const toggleEdit = (i, val) => {
     setItems((items) =>
       items.map((item, idx) => (idx === i ? { ...item, isEditing: val } : item))
     );
   };
 
-  // Actualiza la descripción de un item
   const handleDescChange = (i, val) => {
     setItems((items) =>
       items.map((item, idx) =>
@@ -233,23 +259,46 @@ const QuotePage = () => {
       )
     );
   };
+
   const formatCLP = (value) =>
     new Intl.NumberFormat("es-CL", {
       style: "currency",
       currency: "CLP",
       minimumFractionDigits: 0,
     }).format(Number(value) || 0);
+
   const handleMesChange = (index, value) => {
     const updated = [...items];
     updated[index].mes = Math.max(parseInt(value) || 1, 1);
     setItems(updated);
   };
 
+  const resizeImage = (file, maxWidth = 600) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          const scale = maxWidth / img.width;
+          canvas.width = maxWidth;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   return (
     <>
       <Navbar />
       <main className="pt-24 min-h-screen bg-gray-50 px-6 flex justify-center">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-4xl w-full border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-5xl w-full border border-gray-200">
           <h1 className="text-4xl font-extrabold mb-8 text-gray-900">
             🧾 Nueva Cotización
           </h1>
@@ -282,6 +331,8 @@ const QuotePage = () => {
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
           </div>
+
+   
           <div className="mb-6">
             <label className="font-medium text-gray-700 mr-4">
               Responsable:
@@ -332,77 +383,90 @@ const QuotePage = () => {
             </Button>
           </div>
 
-          <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">
-              ➕ Producto Personalizado
-            </h3>
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <div className="w-full md:flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre del producto
-                </label>
-                <input
-                  placeholder="Producto personalizado"
-                  value={customItem.name}
-                  onChange={(e) =>
-                    setCustomItem({ ...customItem, name: e.target.value })
-                  }
-                  className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                />
-              </div>
-              <div className="w-full md:flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción
-                </label>
-                <textarea
-                  placeholder="Escribe una línea por cada punto"
-                  value={customItem.description ?? ""}
-                  onChange={(e) =>
-                    setCustomItem({
-                      ...customItem,
-                      description: e.target.value,
-                    })
-                  }
-                  className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                  rows={3}
-                />
-              </div>
+          <div className="mb-6">
+            <button
+              onClick={() => setShowCustomProduct(!showCustomProduct)}
+              className="text-yellow-700 font-semibold mb-2 hover:underline"
+            >
+              {showCustomProduct
+                ? "➖ Ocultar producto personalizado"
+                : "➕ Producto personalizado"}
+            </button>
 
-              <div className="w-full md:w-40">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Precio
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Precio"
-                  value={
-                    customItem.price === 0
-                      ? ""
-                      : customItem.price.toLocaleString("es-CL")
-                  }
-                  onChange={(e) => {
-                    const val = e.target.value
-                      .replace(/\./g, "")
-                      .replace(/\D/g, "");
-                    setCustomItem({
-                      ...customItem,
-                      price: parseInt(val || "0"),
-                    });
-                  }}
-                  className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                />
+            {showCustomProduct && (
+              <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  ➕ Producto Personalizado
+                </h3>
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                  <div className="w-full md:flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre del producto
+                    </label>
+                    <input
+                      placeholder="Producto personalizado"
+                      value={customItem.name}
+                      onChange={(e) =>
+                        setCustomItem({ ...customItem, name: e.target.value })
+                      }
+                      className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    />
+                  </div>
+                  <div className="w-full md:flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      placeholder="Escribe una línea por cada punto"
+                      value={customItem.description ?? ""}
+                      onChange={(e) =>
+                        setCustomItem({
+                          ...customItem,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="w-full md:w-40">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Precio
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Precio"
+                      value={
+                        customItem.price === 0
+                          ? ""
+                          : customItem.price.toLocaleString("es-CL")
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                          .replace(/\./g, "")
+                          .replace(/\D/g, "");
+                        setCustomItem({
+                          ...customItem,
+                          price: parseInt(val || "0"),
+                        });
+                      }}
+                      className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    />
+                  </div>
+                  <div className="w-full md:w-auto mt-2 md:mt-6">
+                    <Button
+                      onClick={handleAddCustom}
+                      disabled={!customItem.name || customItem.price <= 0}
+                      className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 w-full md:w-auto"
+                    >
+                      ➕ Agregar
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="w-full md:w-auto mt-2 md:mt-6">
-                <Button
-                  onClick={handleAddCustom}
-                  disabled={!customItem.name || customItem.price <= 0}
-                  className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 w-full md:w-auto"
-                >
-                  ➕ Agregar
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="overflow-x-auto mb-6">
@@ -416,6 +480,7 @@ const QuotePage = () => {
                   )}
                   <th className="px-4 py-2 text-left">Precio Unitario</th>
                   <th className="px-4 py-2 text-left">Subtotal</th>
+                  <th className="px-4 py-2 text-left">Imagen</th>
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>
@@ -509,6 +574,41 @@ const QuotePage = () => {
                       ).toLocaleString()}
                     </td>
                     <td className="px-4 py-2">
+                      <div className="space-y-2">
+                        {item.image ? (
+                          <div className="relative">
+                            <img
+                              src={item.image}
+                              alt={`Imagen de ${item.name}`}
+                              className="w-20 h-20 object-cover rounded border"
+                            />
+                            <button
+                              onClick={() => handleRemoveImage(i)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col space-y-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload(e, i)}
+                              className="text-xs"
+                              id={`image-${i}`}
+                            />
+                            <label
+                              htmlFor={`image-${i}`}
+                              className="text-xs text-gray-500 cursor-pointer hover:text-gray-700"
+                            >
+                              📷 Agregar imagen
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
                       <button
                         onClick={() => handleRemoveItem(i)}
                         className="bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded"
@@ -564,7 +664,6 @@ const QuotePage = () => {
                 <label className="mb-1 font-semibold text-gray-700">
                   Despacho
                 </label>
-
                 <input
                   type="text"
                   inputMode="numeric"
@@ -579,6 +678,21 @@ const QuotePage = () => {
                 />
               </div>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block font-medium text-gray-700 mb-1">
+              Observaciones / Condiciones personalizadas
+            </label>
+            <textarea
+              placeholder="Escribe condiciones comerciales u observaciones..."
+              value={form.condiciones || ""}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, condiciones: e.target.value }))
+              }
+              rows={5}
+              className="w-full border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            />
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8">
