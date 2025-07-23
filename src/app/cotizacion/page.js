@@ -3,9 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import Navbar from "../../components/Navbar/NavBar";
 
-
-
-
 const QuotePage = () => {
   const [form, setForm] = useState({
     company: "",
@@ -13,14 +10,16 @@ const QuotePage = () => {
     client: "",
     date: new Date().toISOString().split("T")[0],
     city: "",
+    mail: "",
+    contacto: "",
     plano: "",
     condiciones: "",
   });
   useEffect(() => {
-  fetch("https://arricam-pdf-service.onrender.com/")
-    .then(() => console.log("🔄 API activada"))
-    .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
-}, []);
+    fetch("https://arricam-pdf-service.onrender.com/")
+      .then(() => console.log("🔄 API activada"))
+      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
+  }, []);
 
   const [tipoCotizacion, setTipoCotizacion] = useState("venta");
   const [items, setItems] = useState([]);
@@ -171,6 +170,8 @@ const QuotePage = () => {
             dispatch,
             responsable: personaData.nombre,
             telefono: personaData.telefono,
+            mail: form.mail,
+            contacto: form.contacto,
             plano: form.plano,
             condiciones: form.condiciones,
           }),
@@ -330,9 +331,30 @@ const QuotePage = () => {
               onChange={(e) => setForm({ ...form, city: e.target.value })}
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
+            <input
+              type="email"
+              placeholder="Mail"
+              value={form.mail}
+              onChange={(e) => setForm({ ...form, mail: e.target.value })}
+              className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              required
+            />
+
+            <input
+              type="tel"
+              placeholder="Contacto"
+              value={form.contacto}
+              onChange={(e) => {
+                const soloNumeros = e.target.value.replace(/\D/g, "");
+                setForm({ ...form, contacto: soloNumeros });
+              }}
+              className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={15}
+            />
           </div>
 
-   
           <div className="mb-6">
             <label className="font-medium text-gray-700 mr-4">
               Responsable:
