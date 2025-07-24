@@ -65,7 +65,7 @@ const QuotePage = () => {
       rut: "77.779.321-7",
       direccion: "",
       giro:"", 
-      cuenta: "CUENTA VISTA: 168-11115-02",
+      cuenta: "CUENTA CORRIENTE: 168-11115-02",
       banco: "BANCO DE CHILE",
     },
     "ferreteria-venta": {
@@ -73,7 +73,7 @@ const QuotePage = () => {
       rut: "77.779.321-7",
       direccion: "",
       giro: "",
-      cuenta: "CUENTA VISTA: 168-13961-08",
+      cuenta: "CUENTA CORRIENTE: 168-13961-08",
       banco: "BANCO DE CHILE",
     },
   };
