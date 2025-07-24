@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import Navbar from "../../components/Navbar/NavBar";
+import { PiAlignCenterVerticalSimple } from "react-icons/pi";
 
 const QuotePage = () => {
   const [form, setForm] = useState({
@@ -36,11 +37,46 @@ const QuotePage = () => {
   const [mesGarantia, setMesGarantia] = useState(0);
   const [userEditedGarantia, setUserEditedGarantia] = useState(false);
   const [showCustomProduct, setShowCustomProduct] = useState(false);
-
+  const [cuenta, setCuenta] = useState("");
+    const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
   const personaData = {
     paola: { nombre: "Paola Hernandez", telefono: "+569 5816 8818" },
     alejandra: { nombre: "Alejandra Castro", telefono: "+569 5816 8819" },
   }[persona];
+  const cuentasData = {
+    "comercializadora-arriendo": {
+      razon: "OMERCIALIZADORA Y ARRIENDOS ARRICAM SPA",
+      rut: "76.050.457-2",
+      direccion: "LUMIERE 0280, MAIPÚ",
+      giro: "ARRENDAR CONTAINERS Y MÓDULOS",
+      cuenta: "CUENTA CORRIENTE: 168-06824-09",
+      banco: "BANCO DE CHILE",
+    },
+    "comercializadora-venta": {
+      razon: "OMERCIALIZADORA Y ARRIENDOS ARRICAM SPA",
+      rut: "76.050.457-2",
+      direccion: "LUMIERE 0280, MAIPÚ",
+      giro: "VENTA DE CONTAINERS",
+      cuenta: "CUENTA CORRIENTE: 168-08475-09",
+      banco: "BANCO DE CHILE",
+    },
+    "ferreteria-arriendo": {
+      razon: "FERRETERIA Y COMERCIALIZADORA ARRICAM DOS SPA",
+      rut: "77.779.321-7",
+      direccion: "",
+      giro:"", 
+      cuenta: "CUENTA VISTA: 168-11115-02",
+      banco: "BANCO DE CHILE",
+    },
+    "ferreteria-venta": {
+      razon: "FERRETERIA Y COMERCIALIZADORA ARRICAM DOS SPA",
+      rut: "77.779.321-7",
+      direccion: "",
+      giro: "",
+      cuenta: "CUENTA VISTA: 168-13961-08",
+      banco: "BANCO DE CHILE",
+    },
+  };
 
   const fetchProducts = async () => {
     try {
@@ -150,6 +186,11 @@ const QuotePage = () => {
       setIsDownloading(false);
       return;
     }
+    if (!cuentaSeleccionada) {
+    alert("Por favor selecciona una cuenta antes de generar el PDF.");
+    setIsDownloading(false);
+    return;
+  }
 
     setIsDownloading(true);
     try {
@@ -173,7 +214,13 @@ const QuotePage = () => {
             mail: form.mail,
             contacto: form.contacto,
             plano: form.plano,
-            condiciones: form.condiciones,
+ razon: cuentaSeleccionada?.razon || "",
+rut: cuentaSeleccionada?.rut || "",
+direccion: cuentaSeleccionada?.direccion || "",
+giro: cuentaSeleccionada?.giro || "",
+banco: cuentaSeleccionada?.banco || "",
+cuenta: cuentaSeleccionada?.cuenta || "",
+
           }),
         }
       );
@@ -364,8 +411,8 @@ const QuotePage = () => {
               onChange={(e) => setPersona(e.target.value)}
               className="border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             >
-              <option value="paola">Paola (12345678)</option>
-              <option value="alejandra">Alejandra (87654321)</option>
+              <option value="paola">Paola </option>
+              <option value="alejandra">Alejandra </option>
             </select>
           </div>
 
@@ -381,7 +428,41 @@ const QuotePage = () => {
               <option value="venta">Venta</option>
               <option value="arriendo">Arriendo</option>
             </select>
-          </div>
+          
+
+          <label className="font-medium text-gray-700 mr-4">Cuenta:</label>
+          
+          <select
+            value={cuenta}
+            onChange={(e) => {
+              const nuevaCuenta = e.target.value;
+              
+              if (!tipoCotizacion) {
+                alert("Primero selecciona el tipo de cotización");
+                return;
+              }
+              
+              setCuenta(nuevaCuenta);
+              
+              const key = `${nuevaCuenta}-${tipoCotizacion}`;
+              const cuentaData = cuentasData[key];
+              
+              if (!cuentaData) {
+                alert("No hay datos para esta combinación");
+                return;
+              }
+              
+              setCuentaSeleccionada(cuentaData);
+              console.log("Datos de cuenta seleccionada:", cuentaData);
+            }}
+            className="border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            disabled={!tipoCotizacion}
+            >
+            <option value="">Selecciona una cuenta</option>
+            <option value="comercializadora">Comercializadora</option>
+            <option value="ferreteria">Ferretería</option>
+          </select>
+            </div>
 
           <div className="mb-6 flex flex-col md:flex-row gap-3">
             <select
