@@ -38,7 +38,7 @@ const QuotePage = () => {
   const [userEditedGarantia, setUserEditedGarantia] = useState(false);
   const [showCustomProduct, setShowCustomProduct] = useState(false);
   const [cuenta, setCuenta] = useState("");
-    const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
+  const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
   const personaData = {
     paola: { nombre: "Paola Hernandez", telefono: "+569 5816 8818" },
     alejandra: { nombre: "Alejandra Castro", telefono: "+569 5816 8819" },
@@ -64,7 +64,7 @@ const QuotePage = () => {
       razon: "FERRETERIA Y COMERCIALIZADORA ARRICAM DOS SPA",
       rut: "77.779.321-7",
       direccion: "",
-      giro:"", 
+      giro: "",
       cuenta: "CUENTA CORRIENTE: 168-11115-02",
       banco: "BANCO DE CHILE",
     },
@@ -187,10 +187,10 @@ const QuotePage = () => {
       return;
     }
     if (!cuentaSeleccionada) {
-    alert("Por favor selecciona una cuenta antes de generar el PDF.");
-    setIsDownloading(false);
-    return;
-  }
+      alert("Por favor selecciona una cuenta antes de generar el PDF.");
+      setIsDownloading(false);
+      return;
+    }
 
     setIsDownloading(true);
     try {
@@ -214,13 +214,13 @@ const QuotePage = () => {
             mail: form.mail,
             contacto: form.contacto,
             plano: form.plano,
- razon: cuentaSeleccionada?.razon || "",
-rut: cuentaSeleccionada?.rut || "",
-direccion: cuentaSeleccionada?.direccion || "",
-giro: cuentaSeleccionada?.giro || "",
-banco: cuentaSeleccionada?.banco || "",
-cuenta: cuentaSeleccionada?.cuenta || "",
-
+            condiciones: form.condiciones,
+            razon: cuentaSeleccionada?.razon || "",
+            rut: cuentaSeleccionada?.rut || "",
+            direccion: cuentaSeleccionada?.direccion || "",
+            giro: cuentaSeleccionada?.giro || "",
+            banco: cuentaSeleccionada?.banco || "",
+            cuenta: cuentaSeleccionada?.cuenta || "",
           }),
         }
       );
@@ -428,41 +428,40 @@ cuenta: cuentaSeleccionada?.cuenta || "",
               <option value="venta">Venta</option>
               <option value="arriendo">Arriendo</option>
             </select>
-          
 
-          <label className="font-medium text-gray-700 mr-4">Cuenta:</label>
-          
-          <select
-            value={cuenta}
-            onChange={(e) => {
-              const nuevaCuenta = e.target.value;
-              
-              if (!tipoCotizacion) {
-                alert("Primero selecciona el tipo de cotización");
-                return;
-              }
-              
-              setCuenta(nuevaCuenta);
-              
-              const key = `${nuevaCuenta}-${tipoCotizacion}`;
-              const cuentaData = cuentasData[key];
-              
-              if (!cuentaData) {
-                alert("No hay datos para esta combinación");
-                return;
-              }
-              
-              setCuentaSeleccionada(cuentaData);
-              console.log("Datos de cuenta seleccionada:", cuentaData);
-            }}
-            className="border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            disabled={!tipoCotizacion}
+            <label className="font-medium text-gray-700 mr-4">Cuenta:</label>
+
+            <select
+              value={cuenta}
+              onChange={(e) => {
+                const nuevaCuenta = e.target.value;
+
+                if (!tipoCotizacion) {
+                  alert("Primero selecciona el tipo de cotización");
+                  return;
+                }
+
+                setCuenta(nuevaCuenta);
+
+                const key = `${nuevaCuenta}-${tipoCotizacion}`;
+                const cuentaData = cuentasData[key];
+
+                if (!cuentaData) {
+                  alert("No hay datos para esta combinación");
+                  return;
+                }
+
+                setCuentaSeleccionada(cuentaData);
+                console.log("Datos de cuenta seleccionada:", cuentaData);
+              }}
+              className="border border-gray-300 bg-gray-100 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              disabled={!tipoCotizacion}
             >
-            <option value="">Selecciona una cuenta</option>
-            <option value="comercializadora">Comercializadora</option>
-            <option value="ferreteria">Ferretería</option>
-          </select>
-            </div>
+              <option value="">Selecciona una cuenta</option>
+              <option value="comercializadora">Comercializadora</option>
+              <option value="ferreteria">Ferretería</option>
+            </select>
+          </div>
 
           <div className="mb-6 flex flex-col md:flex-row gap-3">
             <select
