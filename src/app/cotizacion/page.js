@@ -14,7 +14,7 @@ const QuotePage = () => {
     mail: "",
     contacto: "",
     plano: "",
-    condiciones: "",
+    condiciones: "Valor del traslado no incluye rigger, ni certificaciones",
   });
   useEffect(() => {
     fetch("https://arricam-pdf-service.onrender.com/")
@@ -341,6 +341,7 @@ const QuotePage = () => {
       reader.readAsDataURL(file);
     });
   };
+  
 
   return (
     <>
