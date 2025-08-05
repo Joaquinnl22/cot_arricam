@@ -164,38 +164,7 @@ export default function TodasCuentasModal({
             </table>
           </div>
 
-          {/* Resumen de categorizaciones */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Resumen de Categorizaciones:</h4>
-            <div className="flex flex-wrap gap-2">
-              {movimientos.map((movimiento, index) => {
-                const categoriaActual = categorizaciones[index]?.categoria || movimiento.categoria;
-                const tipoCuentaActual = categorizaciones[index]?.tipoCuenta || movimiento.tipoCuenta;
-                
-                if (categoriaActual && categoriaActual !== 'SIN_CATEGORIZAR') {
-                  return (
-                    <div key={index} className="flex items-center gap-1">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        CATEGORIAS_DISPONIBLES.find(cat => cat.id === categoriaActual)?.color || 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {CATEGORIAS_DISPONIBLES.find(cat => cat.id === categoriaActual)?.nombre}
-                      </span>
-                      {tipoCuentaActual && (
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          tipoCuentaActual === 'arriendo' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {tipoCuentaActual === 'arriendo' ? 'ARRIENDO' : 'VENTA'}
-                        </span>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
-          </div>
+
         </div>
 
         {/* Footer */}
