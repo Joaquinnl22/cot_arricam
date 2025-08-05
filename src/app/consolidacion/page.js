@@ -100,15 +100,18 @@ export default function ConsolidacionPage() {
             ...prev,
             bancoChileArriendo: {
               ...prev.bancoChileArriendo,
-              abonos: data.abonosCalculados.bancoChileArriendo || 0
+              abonos: data.abonosCalculados.bancoChileArriendo || 0,
+              saldoInicial: data.saldoInicialChileArriendoFormateado || prev.bancoChileArriendo.saldoInicial
             },
             bancoChileVenta: {
               ...prev.bancoChileVenta,
-              abonos: data.abonosCalculados.bancoChileVenta || 0
+              abonos: data.abonosCalculados.bancoChileVenta || 0,
+              saldoInicial: data.saldoInicialChileVentaFormateado || prev.bancoChileVenta.saldoInicial
             },
             bancoSantander: {
               ...prev.bancoSantander,
-              abonos: data.abonosCalculados.bancoSantander || 0
+              abonos: data.abonosCalculados.bancoSantander || 0,
+              saldoInicial: data.saldoInicialSantanderFormateado || prev.bancoSantander.saldoInicial
             }
           }));
         }
@@ -159,15 +162,18 @@ export default function ConsolidacionPage() {
             ...prev,
             bancoChileArriendo: {
               ...prev.bancoChileArriendo,
-              abonos: data.abonosCalculados.bancoChileArriendo || 0
+              abonos: data.abonosCalculados.bancoChileArriendo || 0,
+              saldoInicial: data.saldoInicialChileArriendoFormateado || prev.bancoChileArriendo.saldoInicial
             },
             bancoChileVenta: {
               ...prev.bancoChileVenta,
-              abonos: data.abonosCalculados.bancoChileVenta || 0
+              abonos: data.abonosCalculados.bancoChileVenta || 0,
+              saldoInicial: data.saldoInicialChileVentaFormateado || prev.bancoChileVenta.saldoInicial
             },
             bancoSantander: {
               ...prev.bancoSantander,
-              abonos: data.abonosCalculados.bancoSantander || 0
+              abonos: data.abonosCalculados.bancoSantander || 0,
+              saldoInicial: data.saldoInicialSantanderFormateado || prev.bancoSantander.saldoInicial
             }
           }));
         }
@@ -499,7 +505,7 @@ export default function ConsolidacionPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
                     <input
-                      type="number"
+                      type="text"
                       placeholder="0"
                       value={valoresFijos.bancoChileArriendo.saldoInicial}
                       onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'saldoInicial', e.target.value)}
@@ -550,7 +556,7 @@ export default function ConsolidacionPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
                     <input
-                      type="number"
+                      type="text"
                       placeholder="0"
                       value={valoresFijos.bancoChileVenta.saldoInicial}
                       onChange={(e) => handleValorFijoChange('bancoChileVenta', 'saldoInicial', e.target.value)}
@@ -601,7 +607,7 @@ export default function ConsolidacionPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
                     <input
-                      type="number"
+                      type="text"
                       placeholder="0"
                       value={valoresFijos.bancoSantander.saldoInicial}
                       onChange={(e) => handleValorFijoChange('bancoSantander', 'saldoInicial', e.target.value)}

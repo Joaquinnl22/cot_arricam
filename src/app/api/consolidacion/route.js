@@ -142,8 +142,10 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   
   // Procesar según el tipo de banco
   if (tipoBanco === 'chile') {
-    // Formato específico del Banco de Chile
-    for (let i = 1; i < data.length; i++) {
+    // Formato específico del Banco de Chile - SOLO GASTOS (columna C desde fila 3)
+    console.log('🏦 Procesando Banco de Chile - Solo gastos (columna C desde fila 3)');
+    
+    for (let i = 2; i < data.length; i++) { // Empezar desde fila 3 (índice 2)
       const row = data[i];
       if (row && row.length >= 3) {
         // Buscar fecha en diferentes columnas
@@ -169,47 +171,67 @@ function procesarArchivoBanco(workbook, tipoBanco) {
           }
         }
         
-        // Buscar monto
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (cell && (typeof cell === 'number' || (typeof cell === 'string' && cell.match(/^[\d\.,]+$/)))) {
-            const numValue = parseFloat(cell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
-            if (!isNaN(numValue) && numValue > 0) {
-              monto = numValue;
-              break;
+        // SOLO procesar columna C (índice 2) - CARGOS/GASTOS
+        const columnaCargo = row[2]; // Columna C
+        if (columnaCargo && (typeof columnaCargo === 'number' || (typeof columnaCargo === 'string' && columnaCargo.match(/^[\d\.,]+$/)))) {
+          const numValue = parseFloat(columnaCargo.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+          if (!isNaN(numValue) && numValue > 0) { // Solo valores mayores a 0
+            monto = numValue;
+            
+            if (fecha && descripcion) {
+              movimientos.push({
+                fecha: fecha,
+                descripcion: descripcion,
+                monto: monto,
+                tipo: 'gasto',
+                banco: 'Banco de Chile',
+                tipoCuenta: '',
+                categoria: categorizarGasto(descripcion)
+              });
+              console.log(`✅ Gasto Banco Chile (fila ${i + 1}): ${formatearNumero(monto)} - ${descripcion}`);
             }
           }
-        }
-        
-        if (fecha && monto > 0) {
-          // Determinar si es un abono basado en la descripción o el monto
-          const esAbono = esMovimientoAbono(descripcion, monto);
-          
-          if (esAbono) {
-            totalAbonos += monto;
-          }
-          
-          movimientos.push({
-            fecha: fecha,
-            descripcion: descripcion,
-            monto: monto,
-            tipo: esAbono ? 'abono' : 'gasto',
-            banco: 'Banco de Chile',
-            tipoCuenta: '',
-            categoria: esAbono ? 'ABONOS' : categorizarGasto(descripcion)
-          });
         }
       }
     }
   } else if (tipoBanco === 'santander') {
-    // Formato específico del Banco Santander
-    for (let i = 1; i < data.length; i++) {
+    // Formato específico del Banco Santander - SOLO GASTOS (valores negativos columna A)
+    console.log('🏦 Procesando Banco Santander - Solo gastos (valores negativos columna A)');
+    
+    // Encontrar las filas de inicio y fin para Santander
+    let inicioMovimientos = -1;
+    let finMovimientos = -1;
+    
+    for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      if (row && row.length >= 3) {
-        // Buscar fecha en diferentes columnas
+      if (row) {
+        for (let j = 0; j < row.length; j++) {
+          const cell = row[j];
+          if (cell && typeof cell === 'string') {
+            const cellLower = cell.toLowerCase();
+            if (cellLower.includes('detalle movimiento')) {
+              inicioMovimientos = i + 1; // Comenzar desde la siguiente fila
+              console.log(`📍 Inicio de movimientos encontrado en fila ${i + 1}: "${cell}"`);
+            } else if (cellLower.includes('resumen comisiones')) {
+              finMovimientos = i;
+              console.log(`📍 Fin de movimientos encontrado en fila ${i + 1}: "${cell}"`);
+              break;
+            }
+          }
+        }
+        if (finMovimientos !== -1) break;
+      }
+    }
+    
+    console.log(`📊 Procesando movimientos desde fila ${inicioMovimientos} hasta fila ${finMovimientos}`);
+    
+    // Procesar solo las filas entre inicio y fin
+    for (let i = inicioMovimientos; i < finMovimientos && i < data.length; i++) {
+      const row = data[i];
+      if (row && row.length > 0) {
+        // Buscar fecha y descripción
         let fecha = null;
         let descripcion = '';
-        let monto = 0;
         
         // Buscar fecha
         for (let j = 0; j < Math.min(row.length, 5); j++) {
@@ -229,35 +251,26 @@ function procesarArchivoBanco(workbook, tipoBanco) {
           }
         }
         
-        // Buscar monto
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (cell && (typeof cell === 'number' || (typeof cell === 'string' && cell.match(/^[\d\.,]+$/)))) {
-            const numValue = parseFloat(cell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
-            if (!isNaN(numValue) && numValue > 0) {
-              monto = numValue;
-              break;
+        // SOLO procesar valores NEGATIVOS de la columna A (índice 0)
+        const columnaA = row[0]; // Columna A
+        if (columnaA && (typeof columnaA === 'number' || (typeof columnaA === 'string' && columnaA.match(/^[\-\d\.,]+$/)))) {
+          const numValue = parseFloat(columnaA.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
+          if (!isNaN(numValue) && numValue < 0) { // Solo valores NEGATIVOS
+            const monto = Math.abs(numValue); // Convertir a positivo para el reporte
+            
+            if (fecha && descripcion) {
+              movimientos.push({
+                fecha: fecha,
+                descripcion: descripcion,
+                monto: monto,
+                tipo: 'gasto',
+                banco: 'Banco Santander',
+                tipoCuenta: '',
+                categoria: categorizarGasto(descripcion)
+              });
+              console.log(`✅ Gasto Santander (fila ${i + 1}): ${formatearNumero(monto)} - ${descripcion}`);
             }
           }
-        }
-        
-        if (fecha && monto > 0) {
-          // Determinar si es un abono basado en la descripción o el monto
-          const esAbono = esMovimientoAbono(descripcion, monto);
-          
-          if (esAbono) {
-            totalAbonos += monto;
-          }
-          
-          movimientos.push({
-            fecha: fecha,
-            descripcion: descripcion,
-            monto: monto,
-            tipo: esAbono ? 'abono' : 'gasto',
-            banco: 'Banco Santander',
-            tipoCuenta: '',
-            categoria: esAbono ? 'ABONOS' : categorizarGasto(descripcion)
-          });
         }
       }
     }

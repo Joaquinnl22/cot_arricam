@@ -10,6 +10,7 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   let totalIngresos = 0;
   let movimientosProcesados = [];
   let numeroCuenta = '';
+  let saldoInicial = 0;
   
   // Obtener la primera hoja
   const sheetName = workbook.SheetNames[0];
@@ -37,6 +38,88 @@ function procesarArchivoBanco(workbook, tipoBanco) {
         }
       }
       if (numeroCuenta) break;
+    }
+  }
+  
+  // Buscar saldo inicial para Santander
+  if (tipoBanco === 'santander') {
+    console.log('🔍 Buscando saldo inicial en Santander...');
+    console.log('Analizando las primeras 20 filas para encontrar "saldo inicial"...');
+    
+    for (let i = 0; i < Math.min(20, data.length); i++) {
+      const row = data[i];
+      if (row) {
+        console.log(`Fila ${i + 1}:`, row);
+        for (let j = 0; j < row.length; j++) {
+          const cell = row[j];
+          if (cell && typeof cell === 'string') {
+            const cellLower = cell.toLowerCase();
+            console.log(`  Columna ${j + 1}: "${cell}" (lowercase: "${cellLower}")`);
+            
+            // Buscar variaciones de "saldo inicial"
+            if (cellLower.includes('saldo inicial') || 
+                cellLower.includes('saldoinicial') || 
+                cellLower.includes('saldo inicial:') ||
+                cellLower.includes('saldo inicial -') ||
+                cellLower.includes('saldo inicial.')) {
+              console.log(`📍 "Saldo inicial" encontrado en fila ${i + 1}, columna ${j + 1}: "${cell}"`);
+              
+              // Buscar el valor en la primera columna de la siguiente fila
+              if (i + 1 < data.length) {
+                const siguienteFila = data[i + 1];
+                console.log(`Siguiente fila (${i + 2}):`, siguienteFila);
+                
+                if (siguienteFila && siguienteFila.length > 0) {
+                  const valorSaldo = siguienteFila[0]; // Primera columna
+                  console.log(`Valor en primera columna: "${valorSaldo}" (tipo: ${typeof valorSaldo})`);
+                  
+                  if (valorSaldo && (typeof valorSaldo === 'number' || (typeof valorSaldo === 'string' && valorSaldo.match(/^[\-\d\.,]+$/)))) {
+                    const numValue = parseFloat(valorSaldo.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
+                    console.log(`Valor numérico parseado: ${numValue}`);
+                    
+                    if (!isNaN(numValue)) {
+                      saldoInicial = numValue;
+                      console.log(`✅ Saldo inicial extraído: ${formatearNumero(saldoInicial)}`);
+                    } else {
+                      console.log(`❌ No se pudo parsear el valor: ${valorSaldo}`);
+                    }
+                  } else {
+                    console.log(`❌ Valor no válido en primera columna: ${valorSaldo}`);
+                  }
+                } else {
+                  console.log(`❌ No hay siguiente fila o está vacía`);
+                }
+              } else {
+                console.log(`❌ No hay siguiente fila disponible`);
+              }
+              break;
+            }
+          }
+        }
+        if (saldoInicial > 0) break;
+      }
+    }
+    
+    if (saldoInicial === 0) {
+      console.log('⚠️ No se encontró saldo inicial en Santander');
+    }
+  }
+  
+  // Buscar saldo inicial para Banco de Chile (Columna E, Fila 3)
+  if (tipoBanco === 'chile') {
+    console.log('🔍 Buscando saldo inicial en Banco de Chile (Columna E, Fila 3)...');
+    if (data.length >= 3) {
+      const fila3 = data[2]; // Fila 3 (índice 2)
+      if (fila3 && fila3.length >= 5) { // Necesitamos al menos 5 columnas (A, B, C, D, E)
+        const valorSaldo = fila3[4]; // Columna E (índice 4)
+        if (valorSaldo && (typeof valorSaldo === 'number' || (typeof valorSaldo === 'string' && valorSaldo.match(/^[\-\d\.,]+$/)))) {
+          const numValue = parseFloat(valorSaldo.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
+          if (!isNaN(numValue)) {
+            saldoInicial = numValue;
+            console.log(`✅ Saldo inicial Banco Chile extraído (Columna E, Fila 3): ${formatearNumero(saldoInicial)}`);
+          }
+        }
+      }
     }
   }
   
@@ -341,7 +424,7 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   
   console.log(`=== FIN RESUMEN ${tipoBanco.toUpperCase()} ===`);
   
-  return { totalIngresos, numeroCuenta };
+  return { totalIngresos, numeroCuenta, saldoInicial };
 }
 
 export async function POST(request) {
@@ -362,6 +445,7 @@ export async function POST(request) {
     
     // Procesar archivos del Banco de Chile por separado
     const archivosChile = [];
+    const saldosInicialesChile = [];
     for (let i = 0; i < bancoChileCount; i++) {
       const bancoChileFile = formData.get(`bancoChile_${i}`);
       if (bancoChileFile) {
@@ -370,46 +454,63 @@ export async function POST(request) {
         const bancoChileWorkbook = XLSX.read(bancoChileBuffer, { type: 'buffer' });
         const resultado = procesarArchivoBanco(bancoChileWorkbook, 'chile');
         archivosChile.push(resultado);
+        saldosInicialesChile.push(resultado.saldoInicial || 0);
+        console.log(`💰 Saldo inicial extraído del archivo ${i + 1}: ${formatearNumero(resultado.saldoInicial || 0)}`);
       }
     }
     
     // Asignar los ingresos del Banco de Chile según el número de cuenta
     console.log('=== ASIGNANDO RESULTADOS BANCO CHILE ===');
+    let saldoInicialArriendo = 0;
+    let saldoInicialVenta = 0;
+    
     for (let i = 0; i < archivosChile.length; i++) {
       const archivo = archivosChile[i];
       const { totalIngresos, numeroCuenta } = archivo;
+      const saldoInicialArchivo = saldosInicialesChile[i] || 0;
       
-      console.log(`Archivo ${i + 1}: Cuenta ${numeroCuenta}, Ingresos ${formatearNumero(totalIngresos)}`);
+      console.log(`Archivo ${i + 1}: Cuenta ${numeroCuenta}, Ingresos ${formatearNumero(totalIngresos)}, Saldo Inicial ${formatearNumero(saldoInicialArchivo)}`);
       
       // Identificar la cuenta según el número encontrado
       if (numeroCuenta.includes('16806824') || numeroCuenta.includes('168-06824')) {
         // Cuenta de Arriendo: 168-06824-09
         abonosCalculados.bancoChileArriendo = totalIngresos;
+        saldoInicialArriendo = saldoInicialArchivo;
         console.log(`✅ Asignando ${formatearNumero(totalIngresos)} a bancoChileArriendo (cuenta: ${numeroCuenta})`);
+        console.log(`💰 Saldo inicial Arriendo: ${formatearNumero(saldoInicialArriendo)}`);
       } else if (numeroCuenta.includes('16808475') || numeroCuenta.includes('168-08475')) {
         // Cuenta de Venta: 168-08475-09
         abonosCalculados.bancoChileVenta = totalIngresos;
+        saldoInicialVenta = saldoInicialArchivo;
         console.log(`✅ Asignando ${formatearNumero(totalIngresos)} a bancoChileVenta (cuenta: ${numeroCuenta})`);
+        console.log(`💰 Saldo inicial Venta: ${formatearNumero(saldoInicialVenta)}`);
       } else {
         // Si no se puede identificar, usar el orden de subida como fallback
         if (abonosCalculados.bancoChileVenta === 0) {
           abonosCalculados.bancoChileVenta = totalIngresos;
+          saldoInicialVenta = saldoInicialArchivo;
           console.log(`⚠️ Asignando ${formatearNumero(totalIngresos)} a bancoChileVenta (fallback - cuenta no identificada)`);
+          console.log(`💰 Saldo inicial Venta (fallback): ${formatearNumero(saldoInicialVenta)}`);
         } else {
           abonosCalculados.bancoChileArriendo = totalIngresos;
+          saldoInicialArriendo = saldoInicialArchivo;
           console.log(`⚠️ Asignando ${formatearNumero(totalIngresos)} a bancoChileArriendo (fallback - cuenta no identificada)`);
+          console.log(`💰 Saldo inicial Arriendo (fallback): ${formatearNumero(saldoInicialArriendo)}`);
         }
       }
     }
     
     // Procesar archivo del Banco Santander por separado
+    let saldoInicialSantander = 0;
     if (bancoSantanderFile) {
       console.log(`Procesando archivo Banco Santander: ${bancoSantanderFile.name}`);
       const bancoSantanderBuffer = await bancoSantanderFile.arrayBuffer();
       const bancoSantanderWorkbook = XLSX.read(bancoSantanderBuffer, { type: 'buffer' });
       const resultado = procesarArchivoBanco(bancoSantanderWorkbook, 'santander');
       abonosCalculados.bancoSantander = resultado.totalIngresos; // Santander (6866228-1)
+      saldoInicialSantander = resultado.saldoInicial || 0;
       console.log(`✅ Asignando ${formatearNumero(resultado.totalIngresos)} a bancoSantander (cuenta: ${resultado.numeroCuenta})`);
+      console.log(`💰 Saldo inicial extraído: ${formatearNumero(saldoInicialSantander)}`);
     } else {
       console.log('❌ No se recibió archivo del Banco Santander');
     }
@@ -424,7 +525,13 @@ export async function POST(request) {
     
     return NextResponse.json({
       success: true,
-      abonosCalculados: abonosCalculados
+      abonosCalculados: abonosCalculados,
+      saldoInicialSantander: saldoInicialSantander,
+      saldoInicialSantanderFormateado: formatearNumero(saldoInicialSantander),
+      saldoInicialChileArriendo: saldoInicialArriendo,
+      saldoInicialChileArriendoFormateado: formatearNumero(saldoInicialArriendo),
+      saldoInicialChileVenta: saldoInicialVenta,
+      saldoInicialChileVentaFormateado: formatearNumero(saldoInicialVenta)
     });
     
   } catch (error) {
