@@ -20,16 +20,19 @@ export default function ConsolidacionPage() {
   const [valoresFijos, setValoresFijos] = useState({
     // Banco de Chile - Arriendo (168-06824-09)
     bancoChileArriendo: {
+      saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
     // Banco de Chile - Venta (168-08475-09)
     bancoChileVenta: {
+      saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
     // Banco Santander (6866228-1)
     bancoSantander: {
+      saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
@@ -55,43 +58,9 @@ export default function ConsolidacionPage() {
     }));
   };
 
-  // Función para extraer saldos iniciales de los archivos
-  const extraerSaldosIniciales = async () => {
-    if (files.bancoChile.length === 0 && !files.bancoSantander) {
-      return;
-    }
 
-    try {
-      const formData = new FormData();
-      
-      // Agregar archivos para extraer saldos iniciales
-      files.bancoChile.forEach((file, index) => {
-        formData.append(`bancoChile_${index}`, file);
-      });
-      formData.append("bancoChileCount", files.bancoChile.length);
-      
-      if (files.bancoSantander) {
-        formData.append("bancoSantander", files.bancoSantander);
-      }
 
-      const response = await fetch("/api/consolidacion/extract-saldo", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.saldosIniciales) {
-          console.log("Saldos iniciales extraídos:", data.saldosIniciales);
-          // Los saldos iniciales se manejan internamente en el backend
-        }
-      }
-    } catch (error) {
-      console.error("Error al extraer saldos iniciales:", error);
-    }
-  };
-
-  const handleFileUpload = async (bankType, file) => {
+  const handleFileUpload = (bankType, file) => {
     // Validar archivos Excel (.xlsx y .xls)
     const validTypes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
@@ -108,11 +77,6 @@ export default function ConsolidacionPage() {
         setFiles(prev => ({ ...prev, [bankType]: file }));
       }
       setError("");
-      
-      // Extraer saldos iniciales después de subir los archivos
-      setTimeout(() => {
-        extraerSaldosIniciales();
-      }, 500);
     } else {
       setError("Por favor, sube un archivo Excel válido (.xlsx o .xls)");
     }
@@ -390,10 +354,10 @@ export default function ConsolidacionPage() {
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-purple-300">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Valores Fijos para Cálculos</h3>
-              <p className="text-sm text-gray-600">Los saldos iniciales se extraen automáticamente de los archivos Excel de las cartolas.</p>
+              <p className="text-sm text-gray-600">Ingresa los valores para los cálculos del reporte consolidado.</p>
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700 font-medium">💡 Los saldos iniciales se detectan automáticamente de cada archivo de cartola</p>
-                <p className="text-xs text-blue-600 mt-1">Los valores se incluyen automáticamente en el reporte final</p>
+                <p className="text-sm text-blue-700 font-medium">💡 Los saldos iniciales se deben ingresar manualmente desde las cartolas</p>
+                <p className="text-xs text-blue-600 mt-1">Revisa cada archivo Excel para obtener los valores correctos</p>
               </div>
             </div>
             
@@ -405,6 +369,16 @@ export default function ConsolidacionPage() {
                   <p className="text-xs text-gray-500">Cuenta: 168-06824-09</p>
                 </div>
                 <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileArriendo.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
                     <input
@@ -436,6 +410,16 @@ export default function ConsolidacionPage() {
                 </div>
                 <div className="space-y-3">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileVenta.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('bancoChileVenta', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
                     <input
                       type="number"
@@ -465,6 +449,16 @@ export default function ConsolidacionPage() {
                   <p className="text-xs text-gray-500">Cuenta: 6866228-1</p>
                 </div>
                 <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoSantander.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('bancoSantander', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
                     <input
@@ -601,7 +595,7 @@ export default function ConsolidacionPage() {
                    <li>• Consolidación de múltiples archivos</li>
                    <li>• Template interno predefinido</li>
                    <li>• Formato estándar Arricam</li>
-                   <li>• Saldos iniciales extraídos automáticamente de las cartolas (no visibles en la interfaz)</li>
+                   <li>• Saldos iniciales ingresados manualmente desde las cartolas</li>
                  </ul>
                </div>
             </div>
