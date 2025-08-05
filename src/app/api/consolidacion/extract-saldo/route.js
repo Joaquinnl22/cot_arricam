@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 function formatearNumero(numero) {
   if (typeof numero !== 'number') return '0';
