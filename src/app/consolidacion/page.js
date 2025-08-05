@@ -20,19 +20,16 @@ export default function ConsolidacionPage() {
   const [valoresFijos, setValoresFijos] = useState({
     // Banco de Chile - Arriendo (168-06824-09)
     bancoChileArriendo: {
-      saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
     // Banco de Chile - Venta (168-08475-09)
     bancoChileVenta: {
-      saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
     // Banco Santander (6866228-1)
     bancoSantander: {
-      saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
@@ -85,21 +82,8 @@ export default function ConsolidacionPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.saldosIniciales) {
-          setValoresFijos(prev => ({
-            ...prev,
-            bancoChileArriendo: {
-              ...prev.bancoChileArriendo,
-              saldoInicial: data.saldosIniciales.bancoChileArriendo || ''
-            },
-            bancoChileVenta: {
-              ...prev.bancoChileVenta,
-              saldoInicial: data.saldosIniciales.bancoChileVenta || ''
-            },
-            bancoSantander: {
-              ...prev.bancoSantander,
-              saldoInicial: data.saldosIniciales.bancoSantander || ''
-            }
-          }));
+          console.log("Saldos iniciales extraídos:", data.saldosIniciales);
+          // Los saldos iniciales se manejan internamente en el backend
         }
       }
     } catch (error) {
@@ -406,15 +390,10 @@ export default function ConsolidacionPage() {
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-purple-300">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Valores Fijos para Cálculos</h3>
-              <p className="text-sm text-gray-600">Los saldos iniciales se extraen automáticamente de los archivos Excel de las cartolas. Puedes modificarlos si es necesario.</p>
+              <p className="text-sm text-gray-600">Los saldos iniciales se extraen automáticamente de los archivos Excel de las cartolas.</p>
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-700 font-medium">💡 Los saldos iniciales se detectan automáticamente de cada archivo de cartola</p>
-                <button
-                  onClick={extraerSaldosIniciales}
-                  className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
-                >
-                  🔄 Extraer Saldos Iniciales
-                </button>
+                <p className="text-xs text-blue-600 mt-1">Los valores se incluyen automáticamente en el reporte final</p>
               </div>
             </div>
             
@@ -426,16 +405,6 @@ export default function ConsolidacionPage() {
                   <p className="text-xs text-gray-500">Cuenta: 168-06824-09</p>
                 </div>
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={valoresFijos.bancoChileArriendo.saldoInicial}
-                      onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'saldoInicial', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
                     <input
@@ -467,16 +436,6 @@ export default function ConsolidacionPage() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={valoresFijos.bancoChileVenta.saldoInicial}
-                      onChange={(e) => handleValorFijoChange('bancoChileVenta', 'saldoInicial', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                    />
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
                     <input
                       type="number"
@@ -506,16 +465,6 @@ export default function ConsolidacionPage() {
                   <p className="text-xs text-gray-500">Cuenta: 6866228-1</p>
                 </div>
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={valoresFijos.bancoSantander.saldoInicial}
-                      onChange={(e) => handleValorFijoChange('bancoSantander', 'saldoInicial', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
                     <input
@@ -652,7 +601,7 @@ export default function ConsolidacionPage() {
                    <li>• Consolidación de múltiples archivos</li>
                    <li>• Template interno predefinido</li>
                    <li>• Formato estándar Arricam</li>
-                   <li>• Saldos iniciales extraídos automáticamente de las cartolas</li>
+                   <li>• Saldos iniciales extraídos automáticamente de las cartolas (no visibles en la interfaz)</li>
                  </ul>
                </div>
             </div>

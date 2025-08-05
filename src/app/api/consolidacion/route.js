@@ -270,17 +270,24 @@ function procesarArchivoBanco(workbook, tipoBanco) {
 }
 
 // Función para generar el reporte consolidado con el formato específico de Arricam
-function generarReporteConsolidado(movimientos, valoresFijos = null) {
+function generarReporteConsolidado(movimientos, valoresFijos = null, saldosIniciales = null) {
   // Valores fijos por defecto si no se proporcionan
   const valoresPorDefecto = {
-    bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
-    bancoChileVenta: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
-    bancoSantander: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    bancoChileArriendo: { abonos: 0, lineaCredito: 0 },
+    bancoChileVenta: { abonos: 0, lineaCredito: 0 },
+    bancoSantander: { abonos: 0, lineaCredito: 0 },
     abonosXPagos: 0,
     rescteFdosMut: 0
   };
   
   const valores = valoresFijos || valoresPorDefecto;
+  
+  // Usar saldos iniciales extraídos automáticamente si están disponibles
+  const saldosInicialesFinales = saldosIniciales || {
+    bancoChileArriendo: 0,
+    bancoChileVenta: 0,
+    bancoSantander: 0
+  };
   
   // Agrupar por categorías
   const categorias = {};
@@ -297,9 +304,9 @@ function generarReporteConsolidado(movimientos, valoresFijos = null) {
   
   // Calcular totales por cuenta
   const totalesPorCuenta = {
-    'Banco de Chile - Arriendo': { gastos: 0, abonos: valores.bancoChileArriendo.abonos, saldoInicial: valores.bancoChileArriendo.saldoInicial },
-    'Banco de Chile - Venta': { gastos: 0, abonos: valores.bancoChileVenta.abonos, saldoInicial: valores.bancoChileVenta.saldoInicial },
-    'Banco Santander': { gastos: 0, abonos: valores.bancoSantander.abonos, saldoInicial: valores.bancoSantander.saldoInicial }
+    'Banco de Chile - Arriendo': { gastos: 0, abonos: valores.bancoChileArriendo.abonos, saldoInicial: saldosInicialesFinales.bancoChileArriendo },
+    'Banco de Chile - Venta': { gastos: 0, abonos: valores.bancoChileVenta.abonos, saldoInicial: saldosInicialesFinales.bancoChileVenta },
+    'Banco Santander': { gastos: 0, abonos: valores.bancoSantander.abonos, saldoInicial: saldosInicialesFinales.bancoSantander }
   };
   
   movimientos.forEach(mov => {
@@ -769,10 +776,12 @@ export async function POST(request) {
       };
     }
     
-    // Actualizar saldos iniciales extraídos de los archivos
-    valoresFijos.bancoChileArriendo.saldoInicial = saldosInicialesChile.arriendo;
-    valoresFijos.bancoChileVenta.saldoInicial = saldosInicialesChile.venta;
-    valoresFijos.bancoSantander.saldoInicial = saldoInicialSantander;
+    // Preparar saldos iniciales extraídos
+    const saldosInicialesExtraidos = {
+      bancoChileArriendo: saldosInicialesChile.arriendo,
+      bancoChileVenta: saldosInicialesChile.venta,
+      bancoSantander: saldoInicialSantander
+    };
     
     // Aplicar categorizaciones manuales si existen
     if (categorizacionesStr) {
@@ -802,8 +811,8 @@ export async function POST(request) {
       );
     }
     
-    // Generar reporte consolidado
-    const buffer = generarReporteConsolidado(todosLosMovimientos, valoresFijos);
+    // Generar reporte consolidado con saldos iniciales extraídos
+    const buffer = generarReporteConsolidado(todosLosMovimientos, valoresFijos, saldosInicialesExtraidos);
     
     return new NextResponse(buffer, {
       status: 200,
