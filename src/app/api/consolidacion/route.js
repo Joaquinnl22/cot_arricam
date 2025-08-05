@@ -25,10 +25,18 @@ const CATEGORIAS = {
     'repuesto', 'construmart', 'newen', 'dideval', 'rivet'
   ],
   VEHICULOS: [
-    'vehiculo', 'auto', 'camion', 'ruta', 'autopista', 'peaje', 'patente', 'seguro', 
-    'sura', 'hdi', 'kia', 'dodge', 'ranger', 'musso', 'actyon', 'volvo', 'ford', 
-    'mercedes', 'liberty', 'bci', 'soap', 'rev tecnica', 'neumatico', 'bateria',
+    'vehiculo', 'auto', 'camion', 'ruta', 'patente', 'kia', 'dodge', 'ranger', 'musso', 
+    'actyon', 'volvo', 'ford', 'mercedes', 'soap', 'rev tecnica', 'neumatico', 'bateria',
     'vehículo'
+  ],
+  VEHICULO_AUTOPISTAS: [
+    'autopista', 'peaje', 'tag', 'concesionaria', 'costanera', 'vespucio', 'américo vespucio',
+    'rutas del pacifico', 'autopista central', 'autopista del sol', 'autopista los andes',
+    'autopista del maipo', 'autopista del itata', 'autopista del aconcagua'
+  ],
+  VEHICULO_SEGUROS: [
+    'seguro', 'sura', 'hdi', 'liberty', 'bci', 'mapfre', 'zurich', 'chilena consolidada',
+    'seguros generales', 'seguro automotriz', 'seguro vehicular', 'poliza', 'aseguradora'
   ],
   PUBLICIDAD: [
     'publicidad', 'google', 'facebook', 'instagram', 'marketing', 'promocion', 

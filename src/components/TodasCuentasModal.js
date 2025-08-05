@@ -7,6 +7,8 @@ const CATEGORIAS_DISPONIBLES = [
   { id: 'SUELDOS_IMPOSIC', nombre: 'SUELDOS/IMPOSIC', color: 'bg-green-100 text-green-800' },
   { id: 'MATERIALES', nombre: 'MATERIALES', color: 'bg-yellow-100 text-yellow-800' },
   { id: 'VEHICULOS', nombre: 'VEHICULOS', color: 'bg-red-100 text-red-800' },
+  { id: 'VEHICULO_AUTOPISTAS', nombre: 'VEHICULO AUTOPISTAS', color: 'bg-orange-100 text-orange-800' },
+  { id: 'VEHICULO_SEGUROS', nombre: 'VEHICULO SEGUROS', color: 'bg-pink-100 text-pink-800' },
   { id: 'PUBLICIDAD', nombre: 'PUBLICIDAD', color: 'bg-purple-100 text-purple-800' },
   { id: 'ART_ESCRITORIO', nombre: 'ART. ESCRITORIO', color: 'bg-indigo-100 text-indigo-800' },
   { id: 'COMBUSTIBLE', nombre: 'COMBUSTIBLE', color: 'bg-orange-100 text-orange-800' },

@@ -745,6 +745,8 @@ export default function ConsolidacionPage() {
                   <li>• SUELDOS/IMPOSIC</li>
                   <li>• MATERIALES</li>
                   <li>• VEHICULOS</li>
+                  <li>• VEHICULO AUTOPISTAS</li>
+                  <li>• VEHICULO SEGUROS</li>
                   <li>• PUBLICIDAD</li>
                   <li>• ART. ESCRITORIO</li>
                   <li>• COMBUSTIBLE</li>
