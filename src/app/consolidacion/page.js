@@ -40,6 +40,15 @@ export default function ConsolidacionPage() {
     abonosXPagos: '',
     rescteFdosMut: ''
   });
+  
+  // Estado para indicar si se están calculando abonos
+  const [calculandoAbonos, setCalculandoAbonos] = useState(false);
+  
+  // Función para formatear números con puntos
+  const formatearNumero = (numero) => {
+    if (typeof numero !== 'number') return '0';
+    return numero.toLocaleString('es-CL');
+  };
 
   const handleValorFijoChange = (seccion, campo, valor) => {
     setValoresFijos(prev => ({
@@ -58,9 +67,119 @@ export default function ConsolidacionPage() {
     }));
   };
 
+  // Función para calcular abonos automáticamente
+  const calcularAbonosAutomaticamente = async () => {
+    if (files.bancoChile.length === 0 && !files.bancoSantander) {
+      return;
+    }
 
+    setCalculandoAbonos(true);
 
-  const handleFileUpload = (bankType, file) => {
+    try {
+      const formData = new FormData();
+      
+      // Agregar archivos para calcular abonos
+      files.bancoChile.forEach((file, index) => {
+        formData.append(`bancoChile_${index}`, file);
+      });
+      formData.append("bancoChileCount", files.bancoChile.length);
+      
+      if (files.bancoSantander) {
+        formData.append("bancoSantander", files.bancoSantander);
+      }
+
+      const response = await fetch("/api/consolidacion/calcular-abonos", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.abonosCalculados) {
+          setValoresFijos(prev => ({
+            ...prev,
+            bancoChileArriendo: {
+              ...prev.bancoChileArriendo,
+              abonos: data.abonosCalculados.bancoChileArriendo || 0
+            },
+            bancoChileVenta: {
+              ...prev.bancoChileVenta,
+              abonos: data.abonosCalculados.bancoChileVenta || 0
+            },
+            bancoSantander: {
+              ...prev.bancoSantander,
+              abonos: data.abonosCalculados.bancoSantander || 0
+            }
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error al calcular abonos automáticamente:", error);
+    } finally {
+      setCalculandoAbonos(false);
+    }
+  };
+
+  // Función para calcular abonos automáticamente con archivos específicos
+  const calcularAbonosAutomaticamenteConArchivos = async (archivosEspecificos) => {
+    if (archivosEspecificos.bancoChile.length === 0 && !archivosEspecificos.bancoSantander) {
+      console.log("No hay archivos para procesar");
+      return;
+    }
+
+    console.log("Calculando abonos con archivos:", {
+      bancoChile: archivosEspecificos.bancoChile.length,
+      bancoSantander: archivosEspecificos.bancoSantander ? "Sí" : "No"
+    });
+
+    setCalculandoAbonos(true);
+
+    try {
+      const formData = new FormData();
+      
+      // Agregar archivos para calcular abonos
+      archivosEspecificos.bancoChile.forEach((file, index) => {
+        formData.append(`bancoChile_${index}`, file);
+      });
+      formData.append("bancoChileCount", archivosEspecificos.bancoChile.length);
+      
+      if (archivosEspecificos.bancoSantander) {
+        formData.append("bancoSantander", archivosEspecificos.bancoSantander);
+      }
+
+      const response = await fetch("/api/consolidacion/calcular-abonos", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.abonosCalculados) {
+          setValoresFijos(prev => ({
+            ...prev,
+            bancoChileArriendo: {
+              ...prev.bancoChileArriendo,
+              abonos: data.abonosCalculados.bancoChileArriendo || 0
+            },
+            bancoChileVenta: {
+              ...prev.bancoChileVenta,
+              abonos: data.abonosCalculados.bancoChileVenta || 0
+            },
+            bancoSantander: {
+              ...prev.bancoSantander,
+              abonos: data.abonosCalculados.bancoSantander || 0
+            }
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error al calcular abonos automáticamente:", error);
+    } finally {
+      setCalculandoAbonos(false);
+    }
+  };
+
+  const handleFileUpload = async (bankType, file) => {
     // Validar archivos Excel (.xlsx y .xls)
     const validTypes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
@@ -68,15 +187,23 @@ export default function ConsolidacionPage() {
     ];
     
     if (file && (validTypes.includes(file.type) || file.name.match(/\.(xlsx|xls)$/i))) {
+      let newFiles;
       if (bankType === 'bancoChile') {
-        setFiles(prev => ({ 
-          ...prev, 
-          bancoChile: [...prev.bancoChile, file]
-        }));
+        newFiles = { 
+          ...files, 
+          bancoChile: [...files.bancoChile, file]
+        };
+        setFiles(newFiles);
       } else {
-        setFiles(prev => ({ ...prev, [bankType]: file }));
+        newFiles = { ...files, [bankType]: file };
+        setFiles(newFiles);
       }
       setError("");
+      
+      // Calcular abonos automáticamente después de subir el archivo
+      setTimeout(() => {
+        calcularAbonosAutomaticamenteConArchivos(newFiles);
+      }, 500);
     } else {
       setError("Por favor, sube un archivo Excel válido (.xlsx o .xls)");
     }
@@ -383,13 +510,20 @@ export default function ConsolidacionPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Abonos
                       <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                      {calculandoAbonos && (
+                        <span className="ml-1 text-xs text-blue-600">🔄 Calculando...</span>
+                      )}
                     </label>
                     <input
-                      type="number"
-                      placeholder="0"
-                      value={valoresFijos.bancoChileArriendo.abonos}
+                      type="text"
+                      placeholder={calculandoAbonos ? "Calculando..." : "0"}
+                      value={calculandoAbonos ? "" : formatearNumero(valoresFijos.bancoChileArriendo.abonos)}
                       onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'abonos', e.target.value)}
-                      className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm ${
+                        calculandoAbonos 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-green-300 bg-green-50'
+                      }`}
                       readOnly
                     />
                   </div>
@@ -427,13 +561,20 @@ export default function ConsolidacionPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Abonos
                       <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                      {calculandoAbonos && (
+                        <span className="ml-1 text-xs text-blue-600">🔄 Calculando...</span>
+                      )}
                     </label>
                     <input
-                      type="number"
-                      placeholder="0"
-                      value={valoresFijos.bancoChileVenta.abonos}
+                      type="text"
+                      placeholder={calculandoAbonos ? "Calculando..." : "0"}
+                      value={calculandoAbonos ? "" : formatearNumero(valoresFijos.bancoChileVenta.abonos)}
                       onChange={(e) => handleValorFijoChange('bancoChileVenta', 'abonos', e.target.value)}
-                      className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm ${
+                        calculandoAbonos 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-green-300 bg-green-50'
+                      }`}
                       readOnly
                     />
                   </div>
@@ -471,13 +612,20 @@ export default function ConsolidacionPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Abonos
                       <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                      {calculandoAbonos && (
+                        <span className="ml-1 text-xs text-blue-600">🔄 Calculando...</span>
+                      )}
                     </label>
                     <input
-                      type="number"
-                      placeholder="0"
-                      value={valoresFijos.bancoSantander.abonos}
+                      type="text"
+                      placeholder={calculandoAbonos ? "Calculando..." : "0"}
+                      value={calculandoAbonos ? "" : formatearNumero(valoresFijos.bancoSantander.abonos)}
                       onChange={(e) => handleValorFijoChange('bancoSantander', 'abonos', e.target.value)}
-                      className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm ${
+                        calculandoAbonos 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-green-300 bg-green-50'
+                      }`}
                       readOnly
                     />
                   </div>
