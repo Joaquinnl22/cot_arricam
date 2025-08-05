@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 
+// Función para formatear números con puntos de miles
+function formatearNumero(numero) {
+  if (numero === null || numero === undefined || numero === '') return '';
+  return numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 // Categorías de gastos con palabras clave específicas de Arricam basadas en el análisis del Excel
 const CATEGORIAS = {
   FLETES: [
@@ -219,7 +225,18 @@ function procesarArchivoBanco(workbook, tipoBanco) {
 }
 
 // Función para generar el reporte consolidado con el formato específico de Arricam
-function generarReporteConsolidado(movimientos) {
+function generarReporteConsolidado(movimientos, valoresFijos = null) {
+  // Valores fijos por defecto si no se proporcionan
+  const valoresPorDefecto = {
+    bancoChileArriendo: { saldoInicial: 7773182, abonos: 11650629, lineaCredito: 11020000 },
+    bancoChileVenta: { saldoInicial: 3163422, abonos: 6771504, lineaCredito: 0 },
+    bancoSantander: { saldoInicial: 50290097, abonos: 3665200, lineaCredito: 1500000 },
+    abonosXPagos: 22087333,
+    rescteFdosMut: 0
+  };
+  
+  const valores = valoresFijos || valoresPorDefecto;
+  
   // Agrupar por categorías
   const categorias = {};
   
@@ -235,9 +252,9 @@ function generarReporteConsolidado(movimientos) {
   
   // Calcular totales por cuenta
   const totalesPorCuenta = {
-    'Banco de Chile - Arriendo': { gastos: 0, abonos: 0, saldoInicial: 7773182 },
-    'Banco de Chile - Venta': { gastos: 0, abonos: 0, saldoInicial: 3163422 },
-    'Banco Santander': { gastos: 0, abonos: 0, saldoInicial: 50290097 }
+    'Banco de Chile - Arriendo': { gastos: 0, abonos: valores.bancoChileArriendo.abonos, saldoInicial: valores.bancoChileArriendo.saldoInicial },
+    'Banco de Chile - Venta': { gastos: 0, abonos: valores.bancoChileVenta.abonos, saldoInicial: valores.bancoChileVenta.saldoInicial },
+    'Banco Santander': { gastos: 0, abonos: valores.bancoSantander.abonos, saldoInicial: valores.bancoSantander.saldoInicial }
   };
   
   movimientos.forEach(mov => {
@@ -263,35 +280,35 @@ function generarReporteConsolidado(movimientos) {
     ['RESUMEN GASTOS MARZO 2025'],
     [''],
     ['GASTOS FIJOS'],
-    ['FLETES', '', totalesPorCategoria.FLETES || 0],
-    ['SUELDOS/IMPOSIC', '', totalesPorCategoria.SUELDOS_IMPOSIC || 0],
-    ['MATERIALES', '', totalesPorCategoria.MATERIALES || 0],
-    ['VEHICULOS', '', totalesPorCategoria.VEHICULOS || 0],
-    ['PUBLICIDAD', '', totalesPorCategoria.PUBLICIDAD || 0],
-    ['OTROS GASTOS', '', totalesPorCategoria.OTROS_GASTOS || 0],
-    ['ART. ESCRITORIO', '', totalesPorCategoria.ART_ESCRITORIO || 0],
-    ['COMBUSTIBLE', '', totalesPorCategoria.COMBUSTIBLE || 0],
-    ['CONTADOR/ABOGADO/REDES', '', totalesPorCategoria.CONTADOR_ABOGADO_REDES || 0],
-    ['IVA', '', totalesPorCategoria.IVA || 0],
-    ['RENTA', '', totalesPorCategoria.RENTA || 0],
-    ['IMPTOS BANCARIOS', '', totalesPorCategoria.IMPTOS_BANCARIOS || 0],
-    ['REPUESTOS/REPARAC', '', totalesPorCategoria.REPUESTOS_REPARAC || 0],
-    ['CAJA CHICA', '', totalesPorCategoria.CAJA_CHICA || 0],
-    ['TOTAL GASTOS FIJOS', '', Object.values(totalesPorCategoria).reduce((sum, total) => sum + total, 0)],
+    ['FLETES', '', formatearNumero(totalesPorCategoria.FLETES || 0)],
+    ['SUELDOS/IMPOSIC', '', formatearNumero(totalesPorCategoria.SUELDOS_IMPOSIC || 0)],
+    ['MATERIALES', '', formatearNumero(totalesPorCategoria.MATERIALES || 0)],
+    ['VEHICULOS', '', formatearNumero(totalesPorCategoria.VEHICULOS || 0)],
+    ['PUBLICIDAD', '', formatearNumero(totalesPorCategoria.PUBLICIDAD || 0)],
+    ['OTROS GASTOS', '', formatearNumero(totalesPorCategoria.OTROS_GASTOS || 0)],
+    ['ART. ESCRITORIO', '', formatearNumero(totalesPorCategoria.ART_ESCRITORIO || 0)],
+    ['COMBUSTIBLE', '', formatearNumero(totalesPorCategoria.COMBUSTIBLE || 0)],
+    ['CONTADOR/ABOGADO/REDES', '', formatearNumero(totalesPorCategoria.CONTADOR_ABOGADO_REDES || 0)],
+    ['IVA', '', formatearNumero(totalesPorCategoria.IVA || 0)],
+    ['RENTA', '', formatearNumero(totalesPorCategoria.RENTA || 0)],
+    ['IMPTOS BANCARIOS', '', formatearNumero(totalesPorCategoria.IMPTOS_BANCARIOS || 0)],
+    ['REPUESTOS/REPARAC', '', formatearNumero(totalesPorCategoria.REPUESTOS_REPARAC || 0)],
+    ['CAJA CHICA', '', formatearNumero(totalesPorCategoria.CAJA_CHICA || 0)],
+    ['TOTAL GASTOS FIJOS', '', formatearNumero(Object.values(totalesPorCategoria).reduce((sum, total) => sum + total, 0))],
     [''],
-    ['COMPRA CONT-INVERS / ARRDOS CONTAINERS - INTERNOS', '', totalesPorCategoria.COMPRA_CONTAINERS || 0],
-    ['INVERSIONES/FDOS MUTUOS', '', totalesPorCategoria.INVERSIONES || 0],
-    ['DEVOLUC GARANTIAS', '', totalesPorCategoria.DEVOLUCION_GARANTIAS || 0],
-    ['TOTAL INVERSIONES', '', (totalesPorCategoria.COMPRA_CONTAINERS || 0) + (totalesPorCategoria.INVERSIONES || 0) + (totalesPorCategoria.DEVOLUCION_GARANTIAS || 0)],
+    ['COMPRA CONT-INVERS / ARRDOS CONTAINERS - INTERNOS', '', formatearNumero(totalesPorCategoria.COMPRA_CONTAINERS || 0)],
+    ['INVERSIONES/FDOS MUTUOS', '', formatearNumero(totalesPorCategoria.INVERSIONES || 0)],
+    ['DEVOLUC GARANTIAS', '', formatearNumero(totalesPorCategoria.DEVOLUCION_GARANTIAS || 0)],
+    ['TOTAL INVERSIONES', '', formatearNumero((totalesPorCategoria.COMPRA_CONTAINERS || 0) + (totalesPorCategoria.INVERSIONES || 0) + (totalesPorCategoria.DEVOLUCION_GARANTIAS || 0))],
     [''],
-    ['TRANSFERENCIAS', '', totalesPorCategoria.TRANSFERENCIAS || 0],
-    ['REDEPOSITOS /CHQ PROTEST', '', 0], // Se calcula por diferencia
-    ['TOT. GRAL MOVIMIENTOS', '', Object.values(totalesPorCategoria).reduce((sum, total) => sum + total, 0)],
+    ['TRANSFERENCIAS', '', formatearNumero(totalesPorCategoria.TRANSFERENCIAS || 0)],
+    ['REDEPOSITOS /CHQ PROTEST', '', formatearNumero(0)], // Se calcula por diferencia
+    ['TOT. GRAL MOVIMIENTOS', '', formatearNumero(Object.values(totalesPorCategoria).reduce((sum, total) => sum + total, 0))],
     [''],
-    ['SALDO INICIAL', '', totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial],
-    ['ABONOS X PAGOS', '', 22087333], // Valor fijo del ejemplo
-    ['RESCTE FDOS MUT/OTROS', '', 0],
-    ['TOTAL INGRESOS', '', totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + 22087333]
+    ['SALDO INICIAL', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
+    ['ABONOS X PAGOS', '', formatearNumero(valores.abonosXPagos)],
+    ['RESCTE FDOS MUT/OTROS', '', formatearNumero(valores.rescteFdosMut)],
+    ['TOTAL INGRESOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + valores.abonosXPagos)]
   ];
   
   // Crear hoja de detalle (segunda imagen)
@@ -311,11 +328,11 @@ function generarReporteConsolidado(movimientos) {
       hojaDetalle.push([
         mov.fecha,
         mov.descripcion,
-        mov.monto,
+        formatearNumero(mov.monto),
         mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
       ]);
     });
-    hojaDetalle.push(['', 'TOTAL FLETES', totalesPorCategoria.FLETES, '']);
+    hojaDetalle.push(['', 'TOTAL FLETES', formatearNumero(totalesPorCategoria.FLETES), '']);
   }
   
   hojaDetalle.push(['']);
@@ -328,11 +345,11 @@ function generarReporteConsolidado(movimientos) {
       hojaDetalle.push([
         mov.fecha,
         mov.descripcion,
-        mov.monto,
+        formatearNumero(mov.monto),
         mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
       ]);
     });
-    hojaDetalle.push(['', 'TOTAL CONTADOR/ABOGADO/REDES', totalesPorCategoria.CONTADOR_ABOGADO_REDES, '']);
+    hojaDetalle.push(['', 'TOTAL CONTADOR/ABOGADO/REDES', formatearNumero(totalesPorCategoria.CONTADOR_ABOGADO_REDES), '']);
   }
   
   hojaDetalle.push(['']);
@@ -345,11 +362,11 @@ function generarReporteConsolidado(movimientos) {
       hojaDetalle.push([
         mov.fecha,
         mov.descripcion,
-        mov.monto,
+        formatearNumero(mov.monto),
         mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
       ]);
     });
-    hojaDetalle.push(['', 'TOTAL VEHICULOS', totalesPorCategoria.VEHICULOS, '']);
+    hojaDetalle.push(['', 'TOTAL VEHICULOS', formatearNumero(totalesPorCategoria.VEHICULOS), '']);
   }
   
   hojaDetalle.push(['']);
@@ -362,11 +379,11 @@ function generarReporteConsolidado(movimientos) {
       hojaDetalle.push([
         mov.fecha,
         mov.descripcion,
-        mov.monto,
+        formatearNumero(mov.monto),
         mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
       ]);
     });
-    hojaDetalle.push(['', 'TOTAL SUELDOS/IMPOSICIONES', totalesPorCategoria.SUELDOS_IMPOSIC, '']);
+    hojaDetalle.push(['', 'TOTAL SUELDOS/IMPOSICIONES', formatearNumero(totalesPorCategoria.SUELDOS_IMPOSIC), '']);
   }
   
   hojaDetalle.push(['']);
@@ -379,11 +396,11 @@ function generarReporteConsolidado(movimientos) {
       hojaDetalle.push([
         mov.fecha,
         mov.descripcion,
-        mov.monto,
+        formatearNumero(mov.monto),
         mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
       ]);
     });
-    hojaDetalle.push(['', 'TOTAL MATERIALES', totalesPorCategoria.MATERIALES, '']);
+    hojaDetalle.push(['', 'TOTAL MATERIALES', formatearNumero(totalesPorCategoria.MATERIALES), '']);
   }
   
   hojaDetalle.push(['']);
@@ -396,11 +413,11 @@ function generarReporteConsolidado(movimientos) {
       hojaDetalle.push([
         mov.fecha,
         mov.descripcion,
-        mov.monto,
+        formatearNumero(mov.monto),
         mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
       ]);
     });
-    hojaDetalle.push(['', 'TOTAL PUBLICIDAD', totalesPorCategoria.PUBLICIDAD, '']);
+    hojaDetalle.push(['', 'TOTAL PUBLICIDAD', formatearNumero(totalesPorCategoria.PUBLICIDAD), '']);
   }
   
   hojaDetalle.push(['']);
@@ -441,35 +458,35 @@ function generarReporteConsolidado(movimientos) {
   // Agregar resumen de cuentas al final
   hojaDetalle.push(['']);
   hojaDetalle.push(['CTA. CTE. ARRDOS NRO. 168-06824-09']);
-  hojaDetalle.push(['SALDO INICIAL CHILE', '', totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial]);
-  hojaDetalle.push(['ABONOS CTA CTE', '', 11650629]);
+  hojaDetalle.push(['SALDO INICIAL CHILE', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial)]);
+  hojaDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valores.bancoChileArriendo.abonos)]);
   hojaDetalle.push(['OTRO ABONO', '', '']);
-  hojaDetalle.push(['TOT HABER', '', totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + 11650629]);
-  hojaDetalle.push(['GASTOS', '', totalesPorCuenta['Banco de Chile - Arriendo'].gastos]);
+  hojaDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + valores.bancoChileArriendo.abonos)]);
+  hojaDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].gastos)]);
   hojaDetalle.push(['CHQ. GIRADOS X COB', '', '']);
-  hojaDetalle.push(['SALDO LIQUIDO', '', totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + 11650629 - totalesPorCuenta['Banco de Chile - Arriendo'].gastos]);
-  hojaDetalle.push(['LINEA CREDITO', '', 11020000]);
+  hojaDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + valores.bancoChileArriendo.abonos - totalesPorCuenta['Banco de Chile - Arriendo'].gastos)]);
+  hojaDetalle.push(['LINEA CREDITO', '', formatearNumero(valores.bancoChileArriendo.lineaCredito)]);
   
   hojaDetalle.push(['']);
   hojaDetalle.push(['CTA. CTE. VENTAS NRO. 168-08475-09']);
-  hojaDetalle.push(['SALDO INICIAL CHILE', '', totalesPorCuenta['Banco de Chile - Venta'].saldoInicial]);
-  hojaDetalle.push(['ABONOS CTA CTE', '', 6771504]);
+  hojaDetalle.push(['SALDO INICIAL CHILE', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial)]);
+  hojaDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valores.bancoChileVenta.abonos)]);
   hojaDetalle.push(['OTRO ABONO', '', '']);
-  hojaDetalle.push(['TOT HABER', '', totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + 6771504]);
-  hojaDetalle.push(['GASTOS', '', totalesPorCuenta['Banco de Chile - Venta'].gastos]);
+  hojaDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + valores.bancoChileVenta.abonos)]);
+  hojaDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].gastos)]);
   hojaDetalle.push(['CHQ. GIRADOS X COB', '', '']);
-  hojaDetalle.push(['SALDO LIQUIDO', '', totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + 6771504 - totalesPorCuenta['Banco de Chile - Venta'].gastos]);
+  hojaDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + valores.bancoChileVenta.abonos - totalesPorCuenta['Banco de Chile - Venta'].gastos)]);
   
   hojaDetalle.push(['']);
   hojaDetalle.push(['CTA. CTE. BANCO SANTANDER NRO. 6866228-1']);
-  hojaDetalle.push(['SALDO INICIAL SANTANDER', '', totalesPorCuenta['Banco Santander'].saldoInicial]);
-  hojaDetalle.push(['ABONOS CTA CTE', '', 3665200]);
+  hojaDetalle.push(['SALDO INICIAL SANTANDER', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial)]);
+  hojaDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valores.bancoSantander.abonos)]);
   hojaDetalle.push(['OTRO ABONO', '', '']);
-  hojaDetalle.push(['TOT HABER', '', totalesPorCuenta['Banco Santander'].saldoInicial + 3665200]);
-  hojaDetalle.push(['GASTOS', '', totalesPorCuenta['Banco Santander'].gastos]);
+  hojaDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial + valores.bancoSantander.abonos)]);
+  hojaDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco Santander'].gastos)]);
   hojaDetalle.push(['CHQ. GIRADOS X COB', '', '']);
-  hojaDetalle.push(['SALDO LIQUIDO', '', totalesPorCuenta['Banco Santander'].saldoInicial + 3665200 - totalesPorCuenta['Banco Santander'].gastos]);
-  hojaDetalle.push(['LINEA CREDITO', '', 1500000]);
+  hojaDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial + valores.bancoSantander.abonos - totalesPorCuenta['Banco Santander'].gastos)]);
+  hojaDetalle.push(['LINEA CREDITO', '', formatearNumero(valores.bancoSantander.lineaCredito)]);
   
   // Crear las hojas del workbook
   const wsConsolidacion = XLSX.utils.aoa_to_sheet(hojaConsolidacion);
@@ -637,6 +654,17 @@ export async function POST(request) {
     const formatoSalidaFile = formData.get('formatoSalida');
     const categorizacionesStr = formData.get('categorizaciones');
     const santanderCategorizacionesStr = formData.get('santanderCategorizaciones');
+    const valoresFijosStr = formData.get('valoresFijos');
+    
+    // Parsear valores fijos si se proporcionan
+    let valoresFijos = null;
+    if (valoresFijosStr) {
+      try {
+        valoresFijos = JSON.parse(valoresFijosStr);
+      } catch (error) {
+        console.error('Error al parsear valores fijos:', error);
+      }
+    }
     
     if (bancoChileCount < 2 || !bancoSantanderFile) {
       return NextResponse.json(
@@ -690,6 +718,7 @@ export async function POST(request) {
         { 
           success: false, 
           todosLosMovimientos: todosLosMovimientos,
+          valoresFijos: valoresFijos,
           error: 'Debes categorizar todos los movimientos'
         },
         { status: 400 }
@@ -697,7 +726,7 @@ export async function POST(request) {
     }
     
     // Generar reporte consolidado
-    const buffer = generarReporteConsolidado(todosLosMovimientos);
+    const buffer = generarReporteConsolidado(todosLosMovimientos, valoresFijos);
     
     return new NextResponse(buffer, {
       status: 200,

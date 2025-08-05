@@ -15,6 +15,48 @@ export default function ConsolidacionPage() {
   const [error, setError] = useState("");
   const [showTodasCuentasModal, setShowTodasCuentasModal] = useState(false);
   const [todosLosMovimientos, setTodosLosMovimientos] = useState([]);
+  
+  // Nuevo estado para valores fijos
+  const [valoresFijos, setValoresFijos] = useState({
+    // Banco de Chile - Arriendo (168-06824-09)
+    bancoChileArriendo: {
+      saldoInicial: '',
+      abonos: '',
+      lineaCredito: ''
+    },
+    // Banco de Chile - Venta (168-08475-09)
+    bancoChileVenta: {
+      saldoInicial: '',
+      abonos: '',
+      lineaCredito: ''
+    },
+    // Banco Santander (6866228-1)
+    bancoSantander: {
+      saldoInicial: '',
+      abonos: '',
+      lineaCredito: ''
+    },
+    // Otros valores fijos
+    abonosXPagos: '',
+    rescteFdosMut: ''
+  });
+
+  const handleValorFijoChange = (seccion, campo, valor) => {
+    setValoresFijos(prev => ({
+      ...prev,
+      [seccion]: {
+        ...prev[seccion],
+        [campo]: valor === '' ? '' : parseFloat(valor) || 0
+      }
+    }));
+  };
+
+  const handleValorGeneralChange = (campo, valor) => {
+    setValoresFijos(prev => ({
+      ...prev,
+      [campo]: valor === '' ? '' : parseFloat(valor) || 0
+    }));
+  };
 
   const handleFileUpload = (bankType, file) => {
     // Validar archivos Excel (.xlsx y .xls)
@@ -72,6 +114,9 @@ export default function ConsolidacionPage() {
         formData.append("formatoSalida", files.formatoSalida);
       }
 
+      // Agregar valores fijos
+      formData.append("valoresFijos", JSON.stringify(valoresFijos));
+
       const response = await fetch("/api/consolidacion", {
         method: "POST",
         body: formData,
@@ -115,6 +160,9 @@ export default function ConsolidacionPage() {
         formData.append("formatoSalida", files.formatoSalida);
       }
       formData.append("categorizaciones", JSON.stringify(categorizaciones));
+      
+      // Agregar valores fijos
+      formData.append("valoresFijos", JSON.stringify(valoresFijos));
 
       const response = await fetch("/api/consolidacion", {
         method: "POST",
@@ -295,6 +343,163 @@ export default function ConsolidacionPage() {
                   <p>✅ Formato estándar Arricam</p>
                   <p>✅ Múltiples hojas de resumen</p>
                   <p>✅ Categorización automática</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección de Valores Fijos */}
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-purple-300">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Valores Fijos para Cálculos</h3>
+              <p className="text-sm text-gray-600">Ingresa los valores para los cálculos del reporte consolidado</p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Banco de Chile - Arriendo */}
+              <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-blue-700 text-lg">Banco de Chile - Arriendo</h4>
+                  <p className="text-xs text-gray-500">Cuenta: 168-06824-09</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileArriendo.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileArriendo.abonos}
+                      onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'abonos', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Crédito</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileArriendo.lineaCredito}
+                      onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'lineaCredito', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Banco de Chile - Venta */}
+              <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-green-700 text-lg">Banco de Chile - Venta</h4>
+                  <p className="text-xs text-gray-500">Cuenta: 168-08475-09</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileVenta.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('bancoChileVenta', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileVenta.abonos}
+                      onChange={(e) => handleValorFijoChange('bancoChileVenta', 'abonos', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Crédito</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoChileVenta.lineaCredito}
+                      onChange={(e) => handleValorFijoChange('bancoChileVenta', 'lineaCredito', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Banco Santander */}
+              <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-red-700 text-lg">Banco Santander</h4>
+                  <p className="text-xs text-gray-500">Cuenta: 6866228-1</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoSantander.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('bancoSantander', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoSantander.abonos}
+                      onChange={(e) => handleValorFijoChange('bancoSantander', 'abonos', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Crédito</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.bancoSantander.lineaCredito}
+                      onChange={(e) => handleValorFijoChange('bancoSantander', 'lineaCredito', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Otros valores fijos */}
+            <div className="mt-8 bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+              <h4 className="font-bold text-purple-700 text-lg mb-4 text-center">Otros Valores</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Abonos X Pagos</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={valoresFijos.abonosXPagos}
+                    onChange={(e) => handleValorGeneralChange('abonosXPagos', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rescte Fdos Mut/otros</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={valoresFijos.rescteFdosMut}
+                    onChange={(e) => handleValorGeneralChange('rescteFdosMut', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  />
                 </div>
               </div>
             </div>
