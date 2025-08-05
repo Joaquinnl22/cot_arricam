@@ -87,6 +87,33 @@ const CATEGORIAS = {
 };
 
 // Función para categorizar automáticamente un gasto
+function esMovimientoAbono(descripcion, monto) {
+  if (!descripcion) return false;
+  
+  const descripcionLower = descripcion.toLowerCase();
+  
+  // Palabras clave que indican abonos
+  const palabrasAbono = [
+    'abono', 'deposito', 'transferencia', 'pago', 'ingreso', 'entrada',
+    'credito', 'devolucion', 'reembolso', 'reintegro', 'compensacion'
+  ];
+  
+  // Verificar si la descripción contiene palabras de abono
+  for (const palabra of palabrasAbono) {
+    if (descripcionLower.includes(palabra)) {
+      return true;
+    }
+  }
+  
+  // También considerar movimientos con montos muy altos como posibles abonos
+  // (esto es una heurística, se puede ajustar según los datos reales)
+  if (monto > 1000000) { // Montos mayores a 1 millón
+    return true;
+  }
+  
+  return false;
+}
+
 function categorizarGasto(descripcion) {
   const descLower = descripcion.toLowerCase();
   
@@ -104,6 +131,7 @@ function categorizarGasto(descripcion) {
 // Función para procesar archivo Excel del banco
 function procesarArchivoBanco(workbook, tipoBanco) {
   const movimientos = [];
+  let totalAbonos = 0;
   
   // Obtener la primera hoja
   const sheetName = workbook.SheetNames[0];
@@ -154,14 +182,21 @@ function procesarArchivoBanco(workbook, tipoBanco) {
         }
         
         if (fecha && monto > 0) {
+          // Determinar si es un abono basado en la descripción o el monto
+          const esAbono = esMovimientoAbono(descripcion, monto);
+          
+          if (esAbono) {
+            totalAbonos += monto;
+          }
+          
           movimientos.push({
             fecha: fecha,
             descripcion: descripcion,
             monto: monto,
-            tipo: 'gasto',
+            tipo: esAbono ? 'abono' : 'gasto',
             banco: 'Banco de Chile',
             tipoCuenta: '',
-            categoria: categorizarGasto(descripcion)
+            categoria: esAbono ? 'ABONOS' : categorizarGasto(descripcion)
           });
         }
       }
@@ -207,21 +242,28 @@ function procesarArchivoBanco(workbook, tipoBanco) {
         }
         
         if (fecha && monto > 0) {
+          // Determinar si es un abono basado en la descripción o el monto
+          const esAbono = esMovimientoAbono(descripcion, monto);
+          
+          if (esAbono) {
+            totalAbonos += monto;
+          }
+          
           movimientos.push({
             fecha: fecha,
             descripcion: descripcion,
             monto: monto,
-            tipo: 'gasto',
+            tipo: esAbono ? 'abono' : 'gasto',
             banco: 'Banco Santander',
             tipoCuenta: '',
-            categoria: categorizarGasto(descripcion)
+            categoria: esAbono ? 'ABONOS' : categorizarGasto(descripcion)
           });
         }
       }
     }
   }
   
-  return movimientos;
+  return { movimientos, totalAbonos };
 }
 
 // Función para generar el reporte consolidado con el formato específico de Arricam
@@ -675,18 +717,29 @@ export async function POST(request) {
     
     // Procesar múltiples archivos del Banco de Chile (.xls)
     let movimientosChile = [];
+    let abonosChile = { venta: 0, arriendo: 0 };
     
     for (let i = 0; i < bancoChileCount; i++) {
       const bancoChileFile = formData.get(`bancoChile_${i}`);
       if (bancoChileFile) {
         const bancoChileBuffer = await bancoChileFile.arrayBuffer();
         const bancoChileWorkbook = XLSX.read(bancoChileBuffer, { type: 'buffer' });
-        const movimientosArchivo = procesarArchivoBanco(bancoChileWorkbook, 'chile');
+        const resultado = procesarArchivoBanco(bancoChileWorkbook, 'chile');
+        const movimientosArchivo = resultado.movimientos;
+        const totalAbonos = resultado.totalAbonos;
         
         // Asignar tipo de cuenta según el índice
+        const tipoCuenta = i === 0 ? 'venta' : 'arriendo';
         movimientosArchivo.forEach(mov => {
-          mov.tipoCuenta = i === 0 ? 'venta' : 'arriendo';
+          mov.tipoCuenta = tipoCuenta;
         });
+        
+        // Guardar abonos según el tipo de cuenta
+        if (tipoCuenta === 'venta') {
+          abonosChile.venta = totalAbonos;
+        } else {
+          abonosChile.arriendo = totalAbonos;
+        }
         
         movimientosChile = [...movimientosChile, ...movimientosArchivo];
       }
@@ -695,10 +748,28 @@ export async function POST(request) {
     // Procesar archivo del Banco Santander (.xlsx)
     const bancoSantanderBuffer = await bancoSantanderFile.arrayBuffer();
     const bancoSantanderWorkbook = XLSX.read(bancoSantanderBuffer, { type: 'buffer' });
-    const movimientosSantander = procesarArchivoBanco(bancoSantanderWorkbook, 'santander');
+    const resultadoSantander = procesarArchivoBanco(bancoSantanderWorkbook, 'santander');
+    const movimientosSantander = resultadoSantander.movimientos;
+    const abonosSantander = resultadoSantander.totalAbonos;
     
     // Consolidar todos los movimientos
     let todosLosMovimientos = [...movimientosChile, ...movimientosSantander];
+    
+    // Actualizar valores fijos con los abonos calculados automáticamente
+    if (!valoresFijos) {
+      valoresFijos = {
+        bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+        bancoChileVenta: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+        bancoSantander: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+        abonosXPagos: 0,
+        rescteFdosMut: 0
+      };
+    }
+    
+    // Actualizar abonos calculados automáticamente
+    valoresFijos.bancoChileArriendo.abonos = abonosChile.arriendo;
+    valoresFijos.bancoChileVenta.abonos = abonosChile.venta;
+    valoresFijos.bancoSantander.abonos = abonosSantander;
     
     // Aplicar categorizaciones manuales si existen
     if (categorizacionesStr) {

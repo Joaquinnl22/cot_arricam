@@ -354,10 +354,10 @@ export default function ConsolidacionPage() {
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-purple-300">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Valores Fijos para Cálculos</h3>
-              <p className="text-sm text-gray-600">Ingresa los valores para los cálculos del reporte consolidado.</p>
+              <p className="text-sm text-gray-600">Los abonos se calculan automáticamente de los archivos Excel. Los saldos iniciales se ingresan manualmente.</p>
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700 font-medium">💡 Los saldos iniciales se deben ingresar manualmente desde las cartolas</p>
-                <p className="text-xs text-blue-600 mt-1">Revisa cada archivo Excel para obtener los valores correctos</p>
+                <p className="text-sm text-blue-700 font-medium">💡 Los abonos se calculan automáticamente de cada archivo de cartola</p>
+                <p className="text-xs text-blue-600 mt-1">Los saldos iniciales se deben ingresar manualmente desde las cartolas</p>
               </div>
             </div>
             
@@ -380,13 +380,17 @@ export default function ConsolidacionPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Abonos
+                      <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                    </label>
                     <input
                       type="number"
                       placeholder="0"
                       value={valoresFijos.bancoChileArriendo.abonos}
                       onChange={(e) => handleValorFijoChange('bancoChileArriendo', 'abonos', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      readOnly
                     />
                   </div>
                   <div>
@@ -420,13 +424,17 @@ export default function ConsolidacionPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Abonos
+                      <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                    </label>
                     <input
                       type="number"
                       placeholder="0"
                       value={valoresFijos.bancoChileVenta.abonos}
                       onChange={(e) => handleValorFijoChange('bancoChileVenta', 'abonos', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                      readOnly
                     />
                   </div>
                   <div>
@@ -460,13 +468,17 @@ export default function ConsolidacionPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Abonos</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Abonos
+                      <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                    </label>
                     <input
                       type="number"
                       placeholder="0"
                       value={valoresFijos.bancoSantander.abonos}
                       onChange={(e) => handleValorFijoChange('bancoSantander', 'abonos', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                      readOnly
                     />
                   </div>
                   <div>
@@ -595,6 +607,7 @@ export default function ConsolidacionPage() {
                    <li>• Consolidación de múltiples archivos</li>
                    <li>• Template interno predefinido</li>
                    <li>• Formato estándar Arricam</li>
+                   <li>• Abonos calculados automáticamente de las cartolas</li>
                    <li>• Saldos iniciales ingresados manualmente desde las cartolas</li>
                  </ul>
                </div>
