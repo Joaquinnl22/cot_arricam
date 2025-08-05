@@ -31,7 +31,7 @@ export default function HomePage() {
         </section>
 
         {/* Bloques principales */}
-        <section className="mt-20 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+        <section className="mt-20 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <Link href="/cotizacion">
             <div className="bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 shadow-lg rounded-xl p-8 text-center cursor-pointer transition-all duration-200">
               <h2 className="text-2xl font-bold text-yellow-700 mb-3">🧾 Cotizaciones para Arricam</h2>
@@ -46,6 +46,15 @@ export default function HomePage() {
               <h2 className="text-2xl font-bold text-blue-700 mb-3">📄 Contratos de sitios</h2>
               <p className="text-gray-700">
                 Gestiona contratos de subarriendo y genera documentos oficiales.
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/consolidacion">
+            <div className="bg-green-100 hover:bg-green-200 border border-green-300 shadow-lg rounded-xl p-8 text-center cursor-pointer transition-all duration-200">
+              <h2 className="text-2xl font-bold text-green-700 mb-3">📊 Consolidación de Cuentas</h2>
+              <p className="text-gray-700">
+                Procesa archivos Excel de bancos y genera reportes consolidados de gastos.
               </p>
             </div>
           </Link>

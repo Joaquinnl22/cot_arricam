@@ -1,0 +1,7 @@
+# Este es un archivo de ejemplo para mostrar el formato esperado
+# En la práctica, este sería un archivo Excel real
+# El formato esperado es:
+# Fecha | Descripción | Monto | Tipo
+# 01-03-2025 | pago fact hormazabal | 321300 | Gasto
+# 03-03-2025 | pago fact vargas | 321300 | Gasto
+# 05-03-2025 | carga copec ranguer | 73066 | Gasto 
