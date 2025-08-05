@@ -283,7 +283,7 @@ const QuotePage = () => {
   const resetForm = () => {
     setForm({
       company: "",
-      quoteNumber: "",
+      quoteNumber: "",                      
       client: "",
       date: new Date().toISOString().split("T")[0],
     });
