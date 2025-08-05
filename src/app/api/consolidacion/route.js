@@ -104,6 +104,7 @@ function categorizarGasto(descripcion) {
 // Función para procesar archivo Excel del banco
 function procesarArchivoBanco(workbook, tipoBanco) {
   const movimientos = [];
+  let saldoInicial = 0;
   
   // Obtener la primera hoja
   const sheetName = workbook.SheetNames[0];
@@ -111,6 +112,50 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   
   // Convertir a JSON
   const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  
+  // Buscar saldo inicial en las primeras filas
+  for (let i = 0; i < Math.min(data.length, 10); i++) {
+    const row = data[i];
+    if (row) {
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j];
+        if (cell && typeof cell === 'string') {
+          // Buscar patrones de saldo inicial
+          if (cell.toLowerCase().includes('saldo inicial') || 
+              cell.toLowerCase().includes('saldo anterior') ||
+              cell.toLowerCase().includes('saldo') && cell.toLowerCase().includes('inicial')) {
+            // Buscar el valor numérico en la misma fila o en la siguiente
+            for (let k = j + 1; k < row.length; k++) {
+              const valueCell = row[k];
+              if (valueCell && (typeof valueCell === 'number' || (typeof valueCell === 'string' && valueCell.match(/^[\d\.,]+$/)))) {
+                const numValue = parseFloat(valueCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+                if (!isNaN(numValue) && numValue > 0) {
+                  saldoInicial = numValue;
+                  break;
+                }
+              }
+            }
+            // Si no se encontró en la misma fila, buscar en la siguiente
+            if (saldoInicial === 0 && i + 1 < data.length) {
+              const nextRow = data[i + 1];
+              for (let k = 0; k < nextRow.length; k++) {
+                const valueCell = nextRow[k];
+                if (valueCell && (typeof valueCell === 'number' || (typeof valueCell === 'string' && valueCell.match(/^[\d\.,]+$/)))) {
+                  const numValue = parseFloat(valueCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+                  if (!isNaN(numValue) && numValue > 0) {
+                    saldoInicial = numValue;
+                    break;
+                  }
+                }
+              }
+            }
+            break;
+          }
+        }
+      }
+      if (saldoInicial > 0) break;
+    }
+  }
   
   // Procesar según el tipo de banco
   if (tipoBanco === 'chile') {
@@ -221,17 +266,17 @@ function procesarArchivoBanco(workbook, tipoBanco) {
     }
   }
   
-  return movimientos;
+  return { movimientos, saldoInicial };
 }
 
 // Función para generar el reporte consolidado con el formato específico de Arricam
 function generarReporteConsolidado(movimientos, valoresFijos = null) {
   // Valores fijos por defecto si no se proporcionan
   const valoresPorDefecto = {
-    bancoChileArriendo: { saldoInicial: 7773182, abonos: 11650629, lineaCredito: 11020000 },
-    bancoChileVenta: { saldoInicial: 3163422, abonos: 6771504, lineaCredito: 0 },
-    bancoSantander: { saldoInicial: 50290097, abonos: 3665200, lineaCredito: 1500000 },
-    abonosXPagos: 22087333,
+    bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    bancoChileVenta: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    bancoSantander: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    abonosXPagos: 0,
     rescteFdosMut: 0
   };
   
@@ -675,16 +720,30 @@ export async function POST(request) {
     
     // Procesar múltiples archivos del Banco de Chile (.xls)
     let movimientosChile = [];
+    let saldosInicialesChile = { venta: 0, arriendo: 0 };
+    
     for (let i = 0; i < bancoChileCount; i++) {
       const bancoChileFile = formData.get(`bancoChile_${i}`);
       if (bancoChileFile) {
         const bancoChileBuffer = await bancoChileFile.arrayBuffer();
         const bancoChileWorkbook = XLSX.read(bancoChileBuffer, { type: 'buffer' });
-        const movimientosArchivo = procesarArchivoBanco(bancoChileWorkbook, 'chile');
-        // Asignar tipo de cuenta según el índice
+        const resultado = procesarArchivoBanco(bancoChileWorkbook, 'chile');
+        const movimientosArchivo = resultado.movimientos;
+        const saldoInicial = resultado.saldoInicial;
+        
+        // Asignar tipo de cuenta según el índice y guardar saldo inicial
+        const tipoCuenta = i === 0 ? 'venta' : 'arriendo';
         movimientosArchivo.forEach(mov => {
-          mov.tipoCuenta = i === 0 ? 'venta' : 'arriendo';
+          mov.tipoCuenta = tipoCuenta;
         });
+        
+        // Guardar saldo inicial según el tipo de cuenta
+        if (tipoCuenta === 'venta') {
+          saldosInicialesChile.venta = saldoInicial;
+        } else {
+          saldosInicialesChile.arriendo = saldoInicial;
+        }
+        
         movimientosChile = [...movimientosChile, ...movimientosArchivo];
       }
     }
@@ -692,10 +751,28 @@ export async function POST(request) {
     // Procesar archivo del Banco Santander (.xlsx)
     const bancoSantanderBuffer = await bancoSantanderFile.arrayBuffer();
     const bancoSantanderWorkbook = XLSX.read(bancoSantanderBuffer, { type: 'buffer' });
-    const movimientosSantander = procesarArchivoBanco(bancoSantanderWorkbook, 'santander');
+    const resultadoSantander = procesarArchivoBanco(bancoSantanderWorkbook, 'santander');
+    const movimientosSantander = resultadoSantander.movimientos;
+    const saldoInicialSantander = resultadoSantander.saldoInicial;
     
     // Consolidar todos los movimientos
     let todosLosMovimientos = [...movimientosChile, ...movimientosSantander];
+    
+    // Actualizar valores fijos con los saldos iniciales extraídos
+    if (!valoresFijos) {
+      valoresFijos = {
+        bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+        bancoChileVenta: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+        bancoSantander: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+        abonosXPagos: 0,
+        rescteFdosMut: 0
+      };
+    }
+    
+    // Actualizar saldos iniciales extraídos de los archivos
+    valoresFijos.bancoChileArriendo.saldoInicial = saldosInicialesChile.arriendo;
+    valoresFijos.bancoChileVenta.saldoInicial = saldosInicialesChile.venta;
+    valoresFijos.bancoSantander.saldoInicial = saldoInicialSantander;
     
     // Aplicar categorizaciones manuales si existen
     if (categorizacionesStr) {

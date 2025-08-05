@@ -58,7 +58,56 @@ export default function ConsolidacionPage() {
     }));
   };
 
-  const handleFileUpload = (bankType, file) => {
+  // Función para extraer saldos iniciales de los archivos
+  const extraerSaldosIniciales = async () => {
+    if (files.bancoChile.length === 0 && !files.bancoSantander) {
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      
+      // Agregar archivos para extraer saldos iniciales
+      files.bancoChile.forEach((file, index) => {
+        formData.append(`bancoChile_${index}`, file);
+      });
+      formData.append("bancoChileCount", files.bancoChile.length);
+      
+      if (files.bancoSantander) {
+        formData.append("bancoSantander", files.bancoSantander);
+      }
+
+      const response = await fetch("/api/consolidacion/extract-saldo", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.saldosIniciales) {
+          setValoresFijos(prev => ({
+            ...prev,
+            bancoChileArriendo: {
+              ...prev.bancoChileArriendo,
+              saldoInicial: data.saldosIniciales.bancoChileArriendo || ''
+            },
+            bancoChileVenta: {
+              ...prev.bancoChileVenta,
+              saldoInicial: data.saldosIniciales.bancoChileVenta || ''
+            },
+            bancoSantander: {
+              ...prev.bancoSantander,
+              saldoInicial: data.saldosIniciales.bancoSantander || ''
+            }
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error al extraer saldos iniciales:", error);
+    }
+  };
+
+  const handleFileUpload = async (bankType, file) => {
     // Validar archivos Excel (.xlsx y .xls)
     const validTypes = [
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
@@ -75,6 +124,11 @@ export default function ConsolidacionPage() {
         setFiles(prev => ({ ...prev, [bankType]: file }));
       }
       setError("");
+      
+      // Extraer saldos iniciales después de subir los archivos
+      setTimeout(() => {
+        extraerSaldosIniciales();
+      }, 500);
     } else {
       setError("Por favor, sube un archivo Excel válido (.xlsx o .xls)");
     }
@@ -352,7 +406,16 @@ export default function ConsolidacionPage() {
           <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-purple-300">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Valores Fijos para Cálculos</h3>
-              <p className="text-sm text-gray-600">Ingresa los valores para los cálculos del reporte consolidado</p>
+              <p className="text-sm text-gray-600">Los saldos iniciales se extraen automáticamente de los archivos Excel de las cartolas. Puedes modificarlos si es necesario.</p>
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700 font-medium">💡 Los saldos iniciales se detectan automáticamente de cada archivo de cartola</p>
+                <button
+                  onClick={extraerSaldosIniciales}
+                  className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                >
+                  🔄 Extraer Saldos Iniciales
+                </button>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -589,6 +652,7 @@ export default function ConsolidacionPage() {
                    <li>• Consolidación de múltiples archivos</li>
                    <li>• Template interno predefinido</li>
                    <li>• Formato estándar Arricam</li>
+                   <li>• Saldos iniciales extraídos automáticamente de las cartolas</li>
                  </ul>
                </div>
             </div>
