@@ -141,7 +141,6 @@ function categorizarGasto(descripcion) {
 function procesarArchivoBanco(workbook, tipoBanco) {
   const movimientos = [];
   let totalAbonos = 0;
-  let saldoInicial = 0;
   
   // Obtener la primera hoja
   const sheetName = workbook.SheetNames[0];
@@ -154,15 +153,6 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   if (tipoBanco === 'chile') {
     // Formato específico del Banco de Chile - SOLO GASTOS (columna C desde fila 3)
     console.log('🏦 Procesando Banco de Chile - Solo gastos (columna C desde fila 3)');
-    
-    // Extraer saldo inicial de la columna E, fila 3
-    if (data.length > 2 && data[2] && data[2].length > 4) {
-      const saldoInicialCell = data[2][4]; // Columna E (índice 4), Fila 3 (índice 2)
-      if (saldoInicialCell && (typeof saldoInicialCell === 'number' || (typeof saldoInicialCell === 'string' && saldoInicialCell.match(/^[\d\.,]+$/)))) {
-        saldoInicial = parseFloat(saldoInicialCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
-        console.log(`💰 Saldo inicial Banco Chile extraído: ${formatearNumero(saldoInicial)}`);
-      }
-    }
     
     for (let i = 2; i < data.length; i++) { // Empezar desde fila 3 (índice 2)
       const row = data[i];
@@ -216,31 +206,6 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   } else if (tipoBanco === 'santander') {
     // Formato específico del Banco Santander - SOLO GASTOS (valores negativos columna A)
     console.log('🏦 Procesando Banco Santander - Solo gastos (valores negativos columna A)');
-    
-    // Extraer saldo inicial de Santander (buscar "saldo inicial" y tomar el valor de la columna A de la siguiente fila)
-    for (let i = 0; i < Math.min(data.length, 20); i++) {
-      const row = data[i];
-      if (row) {
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (cell && typeof cell === 'string') {
-            const cellLower = cell.toLowerCase();
-            if (cellLower.includes('saldo inicial') || cellLower.includes('saldo inicial:')) {
-              // Buscar el valor en la columna A de la siguiente fila
-              if (i + 1 < data.length && data[i + 1] && data[i + 1].length > 0) {
-                const saldoInicialCell = data[i + 1][0]; // Columna A de la siguiente fila
-                if (saldoInicialCell && (typeof saldoInicialCell === 'number' || (typeof saldoInicialCell === 'string' && saldoInicialCell.match(/^[\d\.,]+$/)))) {
-                  saldoInicial = parseFloat(saldoInicialCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
-                  console.log(`💰 Saldo inicial Banco Santander extraído: ${formatearNumero(saldoInicial)}`);
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (saldoInicial > 0) break;
-      }
-    }
     
     // Encontrar las filas de inicio y fin para Santander
     let inicioMovimientos = -1;
@@ -320,7 +285,7 @@ function procesarArchivoBanco(workbook, tipoBanco) {
     }
   }
   
-  return { movimientos, totalAbonos, saldoInicial };
+  return { movimientos, totalAbonos };
 }
 
 export async function POST(request) {
@@ -353,7 +318,6 @@ export async function POST(request) {
     // Procesar múltiples archivos del Banco de Chile (.xls)
     let movimientosChile = [];
     let abonosChile = { venta: 0, arriendo: 0 };
-    let saldosInicialesChile = { venta: 0, arriendo: 0 };
     
     for (let i = 0; i < bancoChileCount; i++) {
       const bancoChileFile = formData.get(`bancoChile_${i}`);
@@ -363,7 +327,6 @@ export async function POST(request) {
         const resultado = procesarArchivoBanco(bancoChileWorkbook, 'chile');
         const movimientosArchivo = resultado.movimientos;
         const totalAbonos = resultado.totalAbonos;
-        const saldoInicial = resultado.saldoInicial;
         
         // Asignar tipo de cuenta según el índice
         const tipoCuenta = i === 0 ? 'venta' : 'arriendo';
@@ -371,13 +334,11 @@ export async function POST(request) {
           mov.tipoCuenta = tipoCuenta;
         });
         
-        // Guardar abonos y saldos iniciales según el tipo de cuenta
+        // Guardar abonos según el tipo de cuenta
         if (tipoCuenta === 'venta') {
           abonosChile.venta = totalAbonos;
-          saldosInicialesChile.venta = saldoInicial;
         } else {
           abonosChile.arriendo = totalAbonos;
-          saldosInicialesChile.arriendo = saldoInicial;
         }
         
         movimientosChile = [...movimientosChile, ...movimientosArchivo];
@@ -390,12 +351,11 @@ export async function POST(request) {
     const resultadoSantander = procesarArchivoBanco(bancoSantanderWorkbook, 'santander');
     const movimientosSantander = resultadoSantander.movimientos;
     const abonosSantander = resultadoSantander.totalAbonos;
-    const saldoInicialSantander = resultadoSantander.saldoInicial;
     
     // Consolidar todos los movimientos
     let todosLosMovimientos = [...movimientosChile, ...movimientosSantander];
     
-    // Actualizar valores fijos con los abonos y saldos iniciales calculados automáticamente
+    // Actualizar valores fijos con los abonos calculados automáticamente
     if (!valoresFijos) {
       valoresFijos = {
         bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
@@ -406,13 +366,10 @@ export async function POST(request) {
       };
     }
     
-    // Actualizar abonos y saldos iniciales calculados automáticamente
+    // Actualizar abonos calculados automáticamente
     valoresFijos.bancoChileArriendo.abonos = abonosChile.arriendo;
-    valoresFijos.bancoChileArriendo.saldoInicial = saldosInicialesChile.arriendo;
     valoresFijos.bancoChileVenta.abonos = abonosChile.venta;
-    valoresFijos.bancoChileVenta.saldoInicial = saldosInicialesChile.venta;
     valoresFijos.bancoSantander.abonos = abonosSantander;
-    valoresFijos.bancoSantander.saldoInicial = saldoInicialSantander;
     
     // Aplicar categorizaciones manuales si existen
     if (categorizacionesStr) {
