@@ -157,25 +157,39 @@ export default function ConsolidacionPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log("📊 Datos recibidos del backend:", data);
+        
         if (data.abonosCalculados) {
-          setValoresFijos(prev => ({
-            ...prev,
-            bancoChileArriendo: {
-              ...prev.bancoChileArriendo,
-              abonos: data.abonosCalculados.bancoChileArriendo || 0,
-              saldoInicial: data.saldoInicialChileArriendoFormateado || prev.bancoChileArriendo.saldoInicial
-            },
-            bancoChileVenta: {
-              ...prev.bancoChileVenta,
-              abonos: data.abonosCalculados.bancoChileVenta || 0,
-              saldoInicial: data.saldoInicialChileVentaFormateado || prev.bancoChileVenta.saldoInicial
-            },
-            bancoSantander: {
-              ...prev.bancoSantander,
-              abonos: data.abonosCalculados.bancoSantander || 0,
-              saldoInicial: data.saldoInicialSantanderFormateado || prev.bancoSantander.saldoInicial
-            }
-          }));
+          console.log("💰 Abonos calculados:", data.abonosCalculados);
+          console.log("💰 Saldos iniciales:", {
+            chileArriendo: data.saldoInicialChileArriendoFormateado,
+            chileVenta: data.saldoInicialChileVentaFormateado,
+            santander: data.saldoInicialSantanderFormateado
+          });
+          
+          setValoresFijos(prev => {
+            const nuevosValores = {
+              ...prev,
+              bancoChileArriendo: {
+                ...prev.bancoChileArriendo,
+                abonos: data.abonosCalculados.bancoChileArriendo || 0,
+                saldoInicial: data.saldoInicialChileArriendoFormateado || prev.bancoChileArriendo.saldoInicial
+              },
+              bancoChileVenta: {
+                ...prev.bancoChileVenta,
+                abonos: data.abonosCalculados.bancoChileVenta || 0,
+                saldoInicial: data.saldoInicialChileVentaFormateado || prev.bancoChileVenta.saldoInicial
+              },
+              bancoSantander: {
+                ...prev.bancoSantander,
+                abonos: data.abonosCalculados.bancoSantander || 0,
+                saldoInicial: data.saldoInicialSantanderFormateado || prev.bancoSantander.saldoInicial
+              }
+            };
+            
+            console.log("🔄 Nuevos valores fijos:", nuevosValores);
+            return nuevosValores;
+          });
         }
       }
     } catch (error) {
