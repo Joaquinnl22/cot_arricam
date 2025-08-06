@@ -118,7 +118,7 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     [''],
     ['TRANSFERENCIAS', '', formatearNumero(totalesPorCategoria.TRANSFERENCIAS || 0)],
     ['REDEPOSITOS /CHQ PROTEST', '', formatearNumero(0)], // Se calcula por diferencia
-    ['TOT. GRAL MOVIMIENTOS', '', formatearNumero(Object.values(totalesPorCategoria).reduce((sum, total) => sum + total, 0))],
+    ['TOT. GRAL MOVIMIENTOS', '', formatearNumero(movimientos.filter(mov => mov.tipo === 'gasto').reduce((sum, mov) => sum + mov.monto, 0))],
     [''],
     ['SALDO INICIAL', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
     ['ABONOS X PAGOS', '', formatearNumero(valoresNumericos.abonosXPagos)],
