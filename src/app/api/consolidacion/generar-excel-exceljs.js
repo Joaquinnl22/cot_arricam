@@ -123,7 +123,11 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     ['SALDO INICIAL', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
     ['ABONOS X PAGOS', '', formatearNumero(valoresNumericos.abonosXPagos)],
     ['RESCTE FDOS MUT/OTROS', '', formatearNumero(valoresNumericos.rescteFdosMut)],
-    ['TOTAL INGRESOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.abonosXPagos)]
+    ['TOTAL INGRESOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.abonosXPagos)],
+    [''],
+    ['RESUMEN GLOBAL'],
+    ['TOTAL SALDOS INICIALES', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
+    ['TOTAL ABONOS', '', formatearNumero(valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos)]
   ];
   
   // Agregar datos a la hoja de consolidación
@@ -138,6 +142,9 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
         if (cellValue.includes('TOTAL') || cellValue.includes('GASTOS FIJOS')) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3D3D3' } };
           cell.font = { bold: true };
+        } else if (cellValue.includes('RESUMEN GLOBAL')) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA9A9A9' } };
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         } else if (cellValue.includes('RESUMEN') || cellValue.includes('MARZO')) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA9A9A9' } };
           cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -146,7 +153,8 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
                     'IVA', 'RENTA', 'IMPTOS BANCARIOS', 'REPUESTOS/REPARAC', 'CAJA CHICA',
                     'COMPRA CONT-INVERS', 'INVERSIONES/FDOS MUTUOS', 'DEVOLUC GARANTIAS',
                     'TRANSFERENCIAS', 'REDEPOSITOS /CHQ PROTEST', 'SALDO INICIAL', 
-                    'ABONOS X PAGOS', 'RESCTE FDOS MUT/OTROS', 'TOTAL INGRESOS'].includes(cellValue)) {
+                    'ABONOS X PAGOS', 'RESCTE FDOS MUT/OTROS', 'TOTAL INGRESOS',
+                    'RESUMEN GLOBAL', 'TOTAL SALDOS INICIALES', 'TOTAL ABONOS'].includes(cellValue)) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
           cell.font = { bold: true };
         }
