@@ -442,6 +442,12 @@ export async function POST(request) {
       );
     }
     
+    // Calcular el mes anterior para el nombre del archivo
+    const fechaActual = new Date();
+    const mesAnterior = new Date(fechaActual.getFullYear(), fechaActual.getMonth() - 1, 1);
+    const nombreMesAnteriorCorto = mesAnterior.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
+    const añoAnterior = mesAnterior.getFullYear();
+    
     // Generar reporte consolidado con ExcelJS
     const buffer = await generarReporteConsolidadoExcelJS(todosLosMovimientos, valoresFijos);
     
@@ -449,7 +455,7 @@ export async function POST(request) {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="consolidacion_arricam.xlsx"'
+        'Content-Disposition': `attachment; filename="consolidacion_arricam_${nombreMesAnteriorCorto}_${añoAnterior}.xlsx"`
       }
     });
     

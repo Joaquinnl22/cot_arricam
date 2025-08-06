@@ -8,6 +8,13 @@ function formatearNumero(numero) {
 
 // Función para generar el reporte consolidado con ExcelJS
 export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos = null) {
+  // Calcular el mes anterior al actual
+  const fechaActual = new Date();
+  const mesAnterior = new Date(fechaActual.getFullYear(), fechaActual.getMonth() - 1, 1);
+  const nombreMesAnterior = mesAnterior.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const nombreMesAnteriorCorto = mesAnterior.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
+  const añoAnterior = mesAnterior.getFullYear();
+  
   // Valores fijos por defecto si no se proporcionan
   const valoresPorDefecto = {
     bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
@@ -83,7 +90,7 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   
   // Datos de consolidación
   const datosConsolidacion = [
-    ['RESUMEN GASTOS MARZO 2025'],
+    [`RESUMEN GASTOS ${nombreMesAnteriorCorto} ${añoAnterior}`],
     [''],
     ['GASTOS FIJOS'],
     ['FLETES', '', formatearNumero(totalesPorCategoria.FLETES || 0)],
@@ -165,7 +172,7 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     ['DETALLE GASTOS ARRICAM SPA'],
     ['BCO CHILE CTA NRO.168-06824-09*168-08475-09'],
     ['BANCO SANTANDER NRO. 6866228-1'],
-    ['DESDE', '01-03-2025'],
+    ['DESDE', `01-${String(mesAnterior.getMonth() + 1).padStart(2, '0')}-${añoAnterior}`],
     [''],
     ['FLETES'],
     ['FECHA', 'DETALLE', 'MONTO', 'TIPO']
