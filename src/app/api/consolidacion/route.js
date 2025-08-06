@@ -155,13 +155,27 @@ function procesarArchivoBanco(workbook, tipoBanco) {
     // Formato específico del Banco de Chile - SOLO GASTOS (columna C desde fila 3)
     console.log('🏦 Procesando Banco de Chile - Solo gastos (columna C desde fila 3)');
     
-    // Extraer saldo inicial de la columna E, fila 3
+    // Extraer saldo inicial: Columna E (saldo mayor) - Columna D (abonos) de la fila 3
     if (data.length > 2 && data[2] && data[2].length > 4) {
-      const saldoInicialCell = data[2][4]; // Columna E (índice 4), Fila 3 (índice 2)
-      if (saldoInicialCell && (typeof saldoInicialCell === 'number' || (typeof saldoInicialCell === 'string' && saldoInicialCell.match(/^[\d\.,]+$/)))) {
-        saldoInicial = parseFloat(saldoInicialCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
-        console.log(`💰 Saldo inicial Banco Chile extraído: ${formatearNumero(saldoInicial)}`);
+      const saldoMayorCell = data[2][4]; // Columna E (índice 4), Fila 3 (índice 2) - Saldo mayor
+      const abonosCell = data[2][3]; // Columna D (índice 3), Fila 3 (índice 2) - Abonos
+      
+      let saldoMayor = 0;
+      let abonos = 0;
+      
+      if (saldoMayorCell && (typeof saldoMayorCell === 'number' || (typeof saldoMayorCell === 'string' && saldoMayorCell.match(/^[\d\.,]+$/)))) {
+        saldoMayor = parseFloat(saldoMayorCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
       }
+      
+      if (abonosCell && (typeof abonosCell === 'number' || (typeof abonosCell === 'string' && abonosCell.match(/^[\d\.,]+$/)))) {
+        abonos = parseFloat(abonosCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+      }
+      
+      // Calcular saldo inicial: Saldo mayor - Abonos
+      saldoInicial = saldoMayor - abonos;
+      console.log(`💰 Saldo mayor (Col E): ${formatearNumero(saldoMayor)}`);
+      console.log(`💰 Abonos (Col D): ${formatearNumero(abonos)}`);
+      console.log(`💰 Saldo inicial Banco Chile calculado: ${formatearNumero(saldoInicial)} (${formatearNumero(saldoMayor)} - ${formatearNumero(abonos)})`);
     }
     
     for (let i = 2; i < data.length; i++) { // Empezar desde fila 3 (índice 2)
