@@ -105,20 +105,38 @@ function procesarArchivoBanco(workbook, tipoBanco) {
     }
   }
   
-  // Buscar saldo inicial para Banco de Chile (Columna E, Fila 3)
+  // Buscar saldo inicial para Banco de Chile (Columna E + Columna C - Columna D, Fila 3)
   if (tipoBanco === 'chile') {
-    console.log('🔍 Buscando saldo inicial en Banco de Chile (Columna E, Fila 3)...');
+    console.log('🔍 Buscando saldo inicial en Banco de Chile (Columna E + Columna C - Columna D, Fila 3)...');
     if (data.length >= 3) {
       const fila3 = data[2]; // Fila 3 (índice 2)
       if (fila3 && fila3.length >= 5) { // Necesitamos al menos 5 columnas (A, B, C, D, E)
-        const valorSaldo = fila3[4]; // Columna E (índice 4)
-        if (valorSaldo && (typeof valorSaldo === 'number' || (typeof valorSaldo === 'string' && valorSaldo.match(/^[\-\d\.,]+$/)))) {
-          const numValue = parseFloat(valorSaldo.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
-          if (!isNaN(numValue)) {
-            saldoInicial = numValue;
-            console.log(`✅ Saldo inicial Banco Chile extraído (Columna E, Fila 3): ${formatearNumero(saldoInicial)}`);
-          }
+        const saldoMayorCell = fila3[4]; // Columna E (índice 4) - Saldo mayor
+        const cargosCell = fila3[2]; // Columna C (índice 2) - Cargos
+        const abonosCell = fila3[3]; // Columna D (índice 3) - Abonos
+        
+        let saldoMayor = 0;
+        let cargos = 0;
+        let abonos = 0;
+        
+        if (saldoMayorCell && (typeof saldoMayorCell === 'number' || (typeof saldoMayorCell === 'string' && saldoMayorCell.match(/^[\d\.,]+$/)))) {
+          saldoMayor = parseFloat(saldoMayorCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
         }
+        
+        if (cargosCell && (typeof cargosCell === 'number' || (typeof cargosCell === 'string' && cargosCell.match(/^[\d\.,]+$/)))) {
+          cargos = parseFloat(cargosCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+        }
+        
+        if (abonosCell && (typeof abonosCell === 'number' || (typeof abonosCell === 'string' && abonosCell.match(/^[\d\.,]+$/)))) {
+          abonos = parseFloat(abonosCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+        }
+        
+        // Calcular saldo inicial: Saldo mayor + Cargos - Abonos
+        saldoInicial = saldoMayor + cargos - abonos;
+        console.log(`💰 Saldo mayor (Col E): ${formatearNumero(saldoMayor)}`);
+        console.log(`💰 Cargos (Col C): ${formatearNumero(cargos)}`);
+        console.log(`💰 Abonos (Col D): ${formatearNumero(abonos)}`);
+        console.log(`💰 Saldo inicial Banco Chile calculado: ${formatearNumero(saldoInicial)} (${formatearNumero(saldoMayor)} + ${formatearNumero(cargos)} - ${formatearNumero(abonos)})`);
       }
     }
   }
