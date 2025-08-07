@@ -9,6 +9,10 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+yarn.lock
+yarn-error.log
+.yarnrc
+.yarnrc.yml
 
 # testing
 /coverage
