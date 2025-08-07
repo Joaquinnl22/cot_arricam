@@ -141,7 +141,23 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     ['IMPTOS BANCARIOS', '', formatearNumero(totalesPorCategoria.IMPTOS_BANCARIOS || 0)],
     ['REPUESTOS/REPARAC', '', formatearNumero(totalesPorCategoria.REPUESTOS_REPARAC || 0)],
     ['CAJA CHICA', '', formatearNumero(totalesPorCategoria.CAJA_CHICA || 0)],
-    ['TOTAL GASTOS FIJOS', '', formatearNumero(Object.values(totalesPorCategoria).reduce((sum, total) => sum + total, 0))],
+    ['TOTAL GASTOS FIJOS', '', formatearNumero(
+      (totalesPorCategoria.FLETES || 0) +
+      (totalesPorCategoria.SUELDOS_IMPOSIC || 0) +
+      (totalesPorCategoria.MATERIALES || 0) +
+      (totalesPorCategoria.VEHICULO_AUTOPISTAS || 0) +
+      (totalesPorCategoria.VEHICULO_SEGUROS || 0) +
+      (totalesPorCategoria.PUBLICIDAD || 0) +
+      (totalesPorCategoria.OTROS_GASTOS || 0) +
+      (totalesPorCategoria.ART_ESCRITORIO || 0) +
+      (totalesPorCategoria.COMBUSTIBLE || 0) +
+      (totalesPorCategoria.CONTADOR_ABOGADO_REDES || 0) +
+      (totalesPorCategoria.IVA || 0) +
+      (totalesPorCategoria.RENTA || 0) +
+      (totalesPorCategoria.IMPTOS_BANCARIOS || 0) +
+      (totalesPorCategoria.REPUESTOS_REPARAC || 0) +
+      (totalesPorCategoria.CAJA_CHICA || 0)
+    )],
     [''],
     ['COMPRA CONT-INVERS / ARRDOS CONTAINERS - INTERNOS', '', formatearNumero(totalesPorCategoria.COMPRA_CONTAINERS || 0)],
     ['INVERSIONES/FDOS MUTUOS', '', formatearNumero(totalesPorCategoria.INVERSIONES || 0)],
