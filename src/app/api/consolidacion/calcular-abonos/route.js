@@ -6,6 +6,79 @@ function formatearNumero(numero) {
   return numero.toLocaleString('es-CL');
 }
 
+// Función mejorada para detectar fechas en diferentes formatos
+function esFechaValida(cell) {
+  if (!cell || typeof cell !== 'string') return false;
+  
+  // Patrones de fecha más flexibles
+  const patronesFecha = [
+    /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/, // DD/MM/YY o DD-MM-YY
+    /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/,   // DD/MM/YYYY o DD-MM-YYYY
+    /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/,   // YYYY/MM/DD o YYYY-MM-DD
+    /^\d{1,2}\.\d{1,2}\.\d{2,4}$/,         // DD.MM.YY
+    /^\d{1,2}\.\d{1,2}\.\d{4}$/            // DD.MM.YYYY
+  ];
+  
+  for (const patron of patronesFecha) {
+    if (patron.test(cell)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Función para analizar la estructura del archivo Santander y detectar columnas de abonos
+function analizarEstructuraSantander(data) {
+  console.log('🔍 Analizando estructura del archivo Santander...');
+  
+  const analisis = {
+    columnasConValores: [],
+    totalFilas: data.length,
+    filasConFechas: 0,
+    filasConValores: 0
+  };
+  
+  // Analizar las primeras 10 filas para entender la estructura
+  for (let i = 0; i < Math.min(10, data.length); i++) {
+    const row = data[i];
+    if (row) {
+      console.log(`Fila ${i + 1}:`, row);
+      
+      let tieneFecha = false;
+      let tieneValores = false;
+      
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j];
+        
+        // Contar filas con fechas
+        if (esFechaValida(cell)) {
+          tieneFecha = true;
+        }
+        
+        // Contar filas con valores numéricos
+        if (cell && (typeof cell === 'number' || (typeof cell === 'string' && cell.match(/^[\-\d\.,]+$/)))) {
+          const numValue = parseFloat(cell.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
+          if (!isNaN(numValue) && numValue !== 0) {
+            tieneValores = true;
+            
+            // Registrar columnas con valores
+            if (!analisis.columnasConValores.includes(j)) {
+              analisis.columnasConValores.push(j);
+            }
+          }
+        }
+      }
+      
+      if (tieneFecha) analisis.filasConFechas++;
+      if (tieneValores) analisis.filasConValores++;
+    }
+  }
+  
+  console.log('📊 Análisis de estructura Santander:', analisis);
+  return analisis;
+}
+
 function procesarArchivoBanco(workbook, tipoBanco) {
   let totalIngresos = 0;
   let movimientosProcesados = [];
@@ -206,8 +279,8 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   if (tipoBanco === 'chile') {
     console.log('🏦 Procesando Banco de Chile - Columna D para abonos, Columna C para cargos');
     
-    // Procesar todas las filas del archivo
-    for (let i = 1; i < data.length; i++) {
+    // Procesar todas las filas del archivo (empezar desde fila 3 - índice 2)
+    for (let i = 2; i < data.length; i++) {
       const row = data[i];
       if (row && row.length >= 4) { // Necesitamos al menos 4 columnas (A, B, C, D)
         // Buscar fecha y descripción
@@ -217,25 +290,40 @@ function procesarArchivoBanco(workbook, tipoBanco) {
         // Buscar fecha en las primeras columnas
         for (let j = 0; j < Math.min(row.length, 3); j++) {
           const cell = row[j];
-          if (cell && typeof cell === 'string' && cell.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
+          if (esFechaValida(cell)) {
             fecha = cell;
             break;
           }
         }
         
-        // Buscar descripción
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (cell && typeof cell === 'string' && cell.length > 3 && !cell.match(/^\d+$/) && !cell.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
-            descripcion = cell;
-            break;
+        // Buscar descripción (columna B típicamente para Banco de Chile)
+        if (row.length > 1) {
+          const cellDescripcion = row[1]; // Columna B
+          if (cellDescripcion && typeof cellDescripcion === 'string' && cellDescripcion.length > 3) {
+            descripcion = cellDescripcion;
+          } else {
+            // Buscar en otras columnas
+            for (let j = 0; j < row.length; j++) {
+              const cell = row[j];
+              if (cell && typeof cell === 'string' && cell.length > 3 && 
+                  !cell.match(/^\d+$/) && 
+                  !esFechaValida(cell) &&
+                  !cell.match(/^[\+\-\d\.,]+$/)) {
+                descripcion = cell;
+                break;
+              }
+            }
           }
         }
         
         // Procesar Columna D (índice 3) - ABONOS
         const columnaAbono = row[3]; // Columna D
+        console.log(`🔍 Fila ${i + 1}: Fecha="${fecha}", Desc="${descripcion}", ColD="${columnaAbono}"`);
+        
         if (columnaAbono && (typeof columnaAbono === 'number' || (typeof columnaAbono === 'string' && columnaAbono.match(/^[\d\.,]+$/)))) {
           const numValue = parseFloat(columnaAbono.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+          console.log(`🔍 Valor parseado Col D: ${numValue} (original: "${columnaAbono}")`);
+          
           if (!isNaN(numValue) && numValue > 0) {
             totalIngresos += numValue;
             movimientosProcesados.push({
@@ -248,7 +336,11 @@ function procesarArchivoBanco(workbook, tipoBanco) {
               tipo: 'abono'
             });
             console.log(`✅ Abono Banco Chile (Columna D): ${formatearNumero(numValue)} - ${descripcion}`);
+          } else {
+            console.log(`⚠️ Fila ${i + 1} valor no válido en Col D: ${numValue} (original: "${columnaAbono}")`);
           }
+        } else {
+          console.log(`⚠️ Fila ${i + 1} columna D no válida: "${columnaAbono}"`);
         }
         
         // Procesar Columna C (índice 2) - CARGOS (solo para debug)
@@ -305,7 +397,7 @@ function procesarArchivoBanco(workbook, tipoBanco) {
         // Buscar fecha
         for (let j = 0; j < Math.min(row.length, 5); j++) {
           const cell = row[j];
-          if (cell && typeof cell === 'string' && cell.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
+          if (esFechaValida(cell)) {
             fecha = cell;
             break;
           }
@@ -314,7 +406,7 @@ function procesarArchivoBanco(workbook, tipoBanco) {
         // Buscar descripción
         for (let j = 0; j < row.length; j++) {
           const cell = row[j];
-          if (cell && typeof cell === 'string' && cell.length > 3 && !cell.match(/^\d+$/) && !cell.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
+          if (cell && typeof cell === 'string' && cell.length > 3 && !cell.match(/^\d+$/) && !esFechaValida(cell)) {
             descripcion = cell;
             break;
           }
@@ -346,83 +438,145 @@ function procesarArchivoBanco(workbook, tipoBanco) {
       }
     }
   } else if (tipoBanco === 'santander') {
-    // Fallback específico para Santander
-    console.log('⚠️ No se pudo detectar formato específico Santander, usando lógica fallback agresiva');
+    // Fallback específico para Santander - MEJORADO
+    console.log('⚠️ No se pudo detectar formato específico Santander, usando lógica fallback mejorada');
+    console.log('🔍 Analizando todo el archivo Santander para encontrar abonos...');
     
-    // Encontrar las filas de inicio y fin para Santander
-    let inicioMovimientos = -1;
-    let finMovimientos = -1;
+    // Analizar la estructura del archivo
+    const analisis = analizarEstructuraSantander(data);
     
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
-      if (row) {
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (cell && typeof cell === 'string') {
-            const cellLower = cell.toLowerCase();
-            if (cellLower.includes('detalle movimiento')) {
-              inicioMovimientos = i + 1; // Comenzar desde la siguiente fila
-              console.log(`📍 Inicio de movimientos encontrado en fila ${i + 1}: "${cell}"`);
-            } else if (cellLower.includes('resumen comisiones')) {
-              finMovimientos = i;
-              console.log(`📍 Fin de movimientos encontrado en fila ${i + 1}: "${cell}"`);
+    // Extraer ABONOS X PAGOS de fila 11, columna C
+    console.log('🔍 Extrayendo ABONOS X PAGOS de fila 11, columna C');
+    if (data.length >= 11) {
+      const fila11 = data[10]; // Fila 11 (índice 10)
+      if (fila11 && fila11.length >= 3) {
+        const abonosXPagosCell = fila11[2]; // Columna C (índice 2)
+        console.log(`🔍 Buscando ABONOS X PAGOS en fila 11, columna C: "${abonosXPagosCell}"`);
+        
+        if (abonosXPagosCell && (typeof abonosXPagosCell === 'number' || (typeof abonosXPagosCell === 'string' && abonosXPagosCell.match(/^[\d\.,]+$/)))) {
+          const numValue = parseFloat(abonosXPagosCell.toString().replace(/[^\d\.,]/g, '').replace(',', '.'));
+          console.log(`🔍 Valor parseado ABONOS X PAGOS: ${numValue} (original: "${abonosXPagosCell}")`);
+          
+          if (!isNaN(numValue) && numValue > 0) {
+            totalIngresos = numValue;
+            console.log(`✅ ABONOS X PAGOS extraído: ${formatearNumero(totalIngresos)}`);
+          } else {
+            console.log(`⚠️ Valor no válido para ABONOS X PAGOS: ${numValue}`);
+          }
+        } else {
+          console.log(`⚠️ Celda no válida para ABONOS X PAGOS: "${abonosXPagosCell}"`);
+        }
+      } else {
+        console.log(`⚠️ Fila 11 no tiene suficientes columnas: ${fila11}`);
+      }
+    } else {
+      console.log(`⚠️ El archivo no tiene suficientes filas (tiene ${data.length}, necesita al menos 11)`);
+    }
+    
+    // Si no se encontró el valor en fila 11, usar la lógica anterior como fallback
+    if (totalIngresos === 0) {
+      console.log('⚠️ No se encontró ABONOS X PAGOS en fila 11, usando lógica fallback...');
+      
+      // Encontrar las filas de inicio y fin para Santander
+      let inicioMovimientos = -1;
+      let finMovimientos = -1;
+      
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        if (row) {
+          for (let j = 0; j < row.length; j++) {
+            const cell = row[j];
+            if (cell && typeof cell === 'string') {
+              const cellLower = cell.toLowerCase();
+              if (cellLower.includes('detalle movimiento') || cellLower.includes('movimientos') || cellLower.includes('transacciones')) {
+                inicioMovimientos = i + 1; // Comenzar desde la siguiente fila
+                console.log(`📍 Inicio de movimientos encontrado en fila ${i + 1}: "${cell}"`);
+              } else if (cellLower.includes('resumen comisiones') || cellLower.includes('total') || cellLower.includes('saldo final')) {
+                finMovimientos = i;
+                console.log(`📍 Fin de movimientos encontrado en fila ${i + 1}: "${cell}"`);
+                break;
+              }
+            }
+          }
+          if (finMovimientos !== -1) break;
+        }
+      }
+      
+      // Si no se encontraron marcadores específicos, usar todo el archivo
+      if (inicioMovimientos === -1) {
+        inicioMovimientos = 0;
+        console.log('⚠️ No se encontraron marcadores de inicio, procesando todo el archivo');
+      }
+      if (finMovimientos === -1) {
+        finMovimientos = data.length;
+        console.log('⚠️ No se encontraron marcadores de fin, procesando hasta el final del archivo');
+      }
+      
+      console.log(`📊 Procesando movimientos desde fila ${inicioMovimientos} hasta fila ${finMovimientos}`);
+      console.log(`📊 Total de filas a procesar: ${finMovimientos - inicioMovimientos}`);
+      
+      // Para Santander, buscar TODOS los valores positivos en el archivo (abonos)
+      for (let i = inicioMovimientos; i < finMovimientos && i < data.length; i++) {
+        const row = data[i];
+        if (row && row.length > 0) {
+          let fecha = null;
+          let descripcion = '';
+          
+          // Buscar fecha y descripción
+          for (let j = 0; j < Math.min(row.length, 5); j++) {
+            const cell = row[j];
+            if (esFechaValida(cell)) {
+              fecha = cell;
               break;
             }
           }
+          
+          for (let j = 0; j < row.length; j++) {
+            const cell = row[j];
+            if (cell && typeof cell === 'string' && cell.length > 3 && !cell.match(/^\d+$/) && !esFechaValida(cell)) {
+              descripcion = cell;
+              break;
+            }
+          }
+          
+          // Para Santander: valores POSITIVOS son ABONOS, valores NEGATIVOS son PAGOS
+          // SOLO procesar la columna 1 (columna A)
+          const cell = row[0]; // Columna A (índice 0)
+          console.log(`🔍 Fila ${i + 1}: Fecha="${fecha}", Desc="${descripcion}", Valor="${cell}"`);
+          
+          if (cell && (typeof cell === 'number' || (typeof cell === 'string' && cell.match(/^[\-\d\.,]+$/)))) {
+            const numValue = parseFloat(cell.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
+            console.log(`🔍 Valor parseado: ${numValue} (original: "${cell}")`);
+            
+            if (!isNaN(numValue) && numValue > 0) {
+              // Valor POSITIVO = ABONO (ingreso)
+              totalIngresos += numValue;
+              movimientosProcesados.push({
+                fecha,
+                descripcion,
+                monto: numValue,
+                posicion: 0, // Columna A
+                totalColumnas: row.length,
+                numeroCuenta,
+                tipo: 'abono'
+              });
+              console.log(`✅ Abono Santander (valor positivo, columna A): ${formatearNumero(numValue)} - ${descripcion}`);
+            } else if (!isNaN(numValue) && numValue < 0) {
+              // Valor NEGATIVO = PAGO (egreso) - solo para debug
+              console.log(`❌ Pago Santander (valor negativo, columna A): ${formatearNumero(Math.abs(numValue))} - ${descripcion}`);
+            } else {
+              console.log(`⚠️ Valor no válido: ${numValue} (original: "${cell}")`);
+            }
+          } else {
+            console.log(`⚠️ Celda no válida: "${cell}" (tipo: ${typeof cell})`);
+          }
         }
-        if (finMovimientos !== -1) break;
       }
-    }
-    
-    console.log(`📊 Procesando movimientos desde fila ${inicioMovimientos} hasta fila ${finMovimientos}`);
-    
-    // Para Santander, buscar TODOS los valores positivos en el archivo (abonos)
-    for (let i = inicioMovimientos; i < finMovimientos && i < data.length; i++) {
-      const row = data[i];
-      if (row) {
-        let fecha = null;
-        let descripcion = '';
-        
-        // Buscar fecha y descripción
-        for (let j = 0; j < Math.min(row.length, 5); j++) {
-          const cell = row[j];
-          if (cell && typeof cell === 'string' && cell.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
-            fecha = cell;
-            break;
-          }
-        }
-        
-        for (let j = 0; j < row.length; j++) {
-          const cell = row[j];
-          if (cell && typeof cell === 'string' && cell.length > 3 && !cell.match(/^\d+$/) && !cell.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/)) {
-            descripcion = cell;
-            break;
-          }
-        }
-        
-        // Para Santander: valores POSITIVOS son ABONOS, valores NEGATIVOS son PAGOS
-        // SOLO procesar la columna 1 (columna A)
-        const cell = row[0]; // Columna A (índice 0)
-        if (cell && (typeof cell === 'number' || (typeof cell === 'string' && cell.match(/^[\-\d\.,]+$/)))) {
-          const numValue = parseFloat(cell.toString().replace(/[^\d\.,\-]/g, '').replace(',', '.'));
-          if (!isNaN(numValue) && numValue > 0) {
-            // Valor POSITIVO = ABONO (ingreso)
-            totalIngresos += numValue;
-            movimientosProcesados.push({
-              fecha,
-              descripcion,
-              monto: numValue,
-              posicion: 0, // Columna A
-              totalColumnas: row.length,
-              numeroCuenta,
-              tipo: 'abono'
-            });
-            console.log(`✅ Abono Santander (valor positivo, columna A): ${formatearNumero(numValue)} - ${descripcion}`);
-          } else if (!isNaN(numValue) && numValue < 0) {
-            // Valor NEGATIVO = PAGO (egreso) - solo para debug
-            console.log(`❌ Pago Santander (valor negativo, columna A): ${formatearNumero(Math.abs(numValue))} - ${descripcion}`);
-          }
-        }
+      
+      // Si no se encontraron abonos, mostrar advertencia
+      if (totalIngresos === 0) {
+        console.log('⚠️ No se encontraron abonos en el archivo Santander');
+        console.log('🔍 Revisar la estructura del archivo y los valores');
       }
     }
   }
@@ -440,9 +594,12 @@ function procesarArchivoBanco(workbook, tipoBanco) {
     });
   }
   
-  console.log(`=== FIN RESUMEN ${tipoBanco.toUpperCase()} ===`);
-  
-  return { totalIngresos, numeroCuenta, saldoInicial };
+      console.log(`=== FIN RESUMEN ${tipoBanco.toUpperCase()} ===`);
+    console.log(`💰 Total abonos calculados para ${tipoBanco}: ${formatearNumero(totalIngresos)}`);
+    console.log(`📊 Movimientos procesados: ${movimientosProcesados.length}`);
+    console.log(`📊 Primeros 3 movimientos:`, movimientosProcesados.slice(0, 3));
+    
+    return { totalIngresos, numeroCuenta, saldoInicial };
 }
 
 export async function POST(request) {

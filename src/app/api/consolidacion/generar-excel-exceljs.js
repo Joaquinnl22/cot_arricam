@@ -47,6 +47,22 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     rescteFdosMut: Number(valores.rescteFdosMut) || 0
   };
   
+  // Debug: Log de valores para verificar
+  console.log('🔍 Valores fijos recibidos:', valores);
+  console.log('🔍 Valores numéricos convertidos:', valoresNumericos);
+  
+  // Log específico de saldos iniciales
+  console.log('💰 Saldos iniciales:');
+  console.log(`  - Banco Chile Arriendo: ${formatearNumero(valoresNumericos.bancoChileArriendo.saldoInicial)}`);
+  console.log(`  - Banco Chile Venta: ${formatearNumero(valoresNumericos.bancoChileVenta.saldoInicial)}`);
+  console.log(`  - Banco Santander: ${formatearNumero(valoresNumericos.bancoSantander.saldoInicial)}`);
+  
+  // Log específico de abonos
+  console.log('💰 Abonos:');
+  console.log(`  - Banco Chile Arriendo: ${formatearNumero(valoresNumericos.bancoChileArriendo.abonos)}`);
+  console.log(`  - Banco Chile Venta: ${formatearNumero(valoresNumericos.bancoChileVenta.abonos)}`);
+  console.log(`  - Banco Santander: ${formatearNumero(valoresNumericos.bancoSantander.abonos)}`);
+  
   // Agrupar por categorías
   const categorias = {};
   
@@ -78,6 +94,22 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
       totalesPorCuenta['Banco Santander'].gastos += mov.monto;
     }
   });
+  
+  // Log de totales por cuenta
+  console.log('📊 Totales por cuenta:');
+  console.log('  - Banco Chile Arriendo:', totalesPorCuenta['Banco de Chile - Arriendo']);
+  console.log('  - Banco Chile Venta:', totalesPorCuenta['Banco de Chile - Venta']);
+  console.log('  - Banco Santander:', totalesPorCuenta['Banco Santander']);
+  
+  // Log de cálculos finales
+  const saldoInicialTotal = totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial;
+  const abonosTotal = valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos;
+  const totalIngresos = saldoInicialTotal + abonosTotal;
+  
+  console.log('💰 Cálculos finales:');
+  console.log(`  - Saldo inicial total: ${formatearNumero(saldoInicialTotal)}`);
+  console.log(`  - Abonos total: ${formatearNumero(abonosTotal)}`);
+  console.log(`  - Total ingresos: ${formatearNumero(totalIngresos)}`);
   
   // Calcular totales por categoría
   const totalesPorCategoria = {};
@@ -121,13 +153,9 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     ['TOT. GRAL MOVIMIENTOS', '', formatearNumero(movimientos.filter(mov => mov.tipo === 'gasto').reduce((sum, mov) => sum + mov.monto, 0))],
     [''],
     ['SALDO INICIAL', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
-    ['ABONOS X PAGOS', '', formatearNumero(valoresNumericos.abonosXPagos)],
+    ['ABONOS X PAGOS', '', formatearNumero(valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos)],
     ['RESCTE FDOS MUT/OTROS', '', formatearNumero(valoresNumericos.rescteFdosMut)],
-    ['TOTAL INGRESOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.abonosXPagos)],
-    [''],
-    ['RESUMEN GLOBAL'],
-    ['TOTAL SALDOS INICIALES', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
-    ['TOTAL ABONOS', '', formatearNumero(valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos)]
+    ['TOTAL INGRESOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos)]
   ];
   
   // Agregar datos a la hoja de consolidación
