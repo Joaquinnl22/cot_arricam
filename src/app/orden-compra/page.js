@@ -32,6 +32,56 @@ const OrdenCompraPage = () => {
   });
   const [showCustomItem, setShowCustomItem] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState("");
+
+  // Función para guardar estado temporal
+  const saveTemporaryState = () => {
+    const tempState = {
+      form,
+      items,
+      customItem,
+      showCustomItem,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('ordenCompraTemp', JSON.stringify(tempState));
+    console.log("💾 Estado temporal guardado");
+  };
+
+  // Función para cargar estado temporal
+  const loadTemporaryState = () => {
+    try {
+      const saved = localStorage.getItem('ordenCompraTemp');
+      if (saved) {
+        const tempState = JSON.parse(saved);
+        const timeDiff = Date.now() - tempState.timestamp;
+        const hoursDiff = timeDiff / (1000 * 60 * 60);
+        
+        // Solo cargar si tiene menos de 24 horas
+        if (hoursDiff < 24) {
+          setForm(tempState.form);
+          setItems(tempState.items || []);
+          setCustomItem(tempState.customItem || { descripcion: "", cantidad: 1, valor: 0 });
+          setShowCustomItem(tempState.showCustomItem || false);
+          console.log("📂 Estado temporal cargado");
+          return true;
+        } else {
+          localStorage.removeItem('ordenCompraTemp');
+          console.log("🗑️ Estado temporal expirado, eliminado");
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error cargando estado temporal:", error);
+      localStorage.removeItem('ordenCompraTemp');
+    }
+    return false;
+  };
+
+  // Función para limpiar estado temporal
+  const clearTemporaryState = () => {
+    localStorage.removeItem('ordenCompraTemp');
+    console.log("🗑️ Estado temporal eliminado");
+  };
 
   async function fetchContadorOrdenCompra() {
     try {
@@ -53,8 +103,22 @@ const OrdenCompraPage = () => {
 
 
   useEffect(() => {
-    fetchContadorOrdenCompra();
+    // Intentar cargar estado temporal primero
+    const tempLoaded = loadTemporaryState();
+    
+    // Si no hay estado temporal, cargar contador normal
+    if (!tempLoaded) {
+      fetchContadorOrdenCompra();
+    }
   }, []);
+
+  // Guardar estado temporal automáticamente cuando cambie
+  useEffect(() => {
+    // Solo guardar si hay datos en el formulario
+    if (form.empresa || items.length > 0) {
+      saveTemporaryState();
+    }
+  }, [form, items, customItem, showCustomItem]);
 
   const handleAddCustomItem = () => {
     if (customItem.descripcion && customItem.valor > 0) {
@@ -145,9 +209,29 @@ const OrdenCompraPage = () => {
 
       // Actualizar el formulario con el nuevo número de orden
       await fetchContadorOrdenCompra();
+      
+      // Limpiar estado temporal después de generar PDF exitosamente
+      clearTemporaryState();
+      
+      // Mostrar mensaje de éxito
+      setDownloadSuccess(true);
+      setDownloadMessage(`✅ Orden de compra ${form.numeroOrden} generada y descargada exitosamente`);
+      
+      // Ocultar mensaje después de 5 segundos
+      setTimeout(() => {
+        setDownloadSuccess(false);
+        setDownloadMessage("");
+      }, 5000);
     } catch (error) {
       console.error("Error:", error);
-      alert("Ocurrió un error al descargar PDF");
+      setDownloadSuccess(false);
+      setDownloadMessage("❌ Error al generar PDF: " + (error.message || "Error desconocido"));
+      
+      // Ocultar mensaje de error después de 5 segundos
+      setTimeout(() => {
+        setDownloadSuccess(false);
+        setDownloadMessage("");
+      }, 5000);
     } finally {
       setIsDownloading(false);
     }
@@ -169,6 +253,8 @@ const OrdenCompraPage = () => {
     });
     setItems([]);
     setCustomItem({ descripcion: "", cantidad: 1, valor: 0 });
+    setShowCustomItem(false);
+    clearTemporaryState(); // Limpiar estado temporal
     await fetchContadorOrdenCompra(); // Obtener nuevo número de orden
   };
 
@@ -198,6 +284,28 @@ const OrdenCompraPage = () => {
           <h1 className="text-4xl font-extrabold mb-8 text-gray-900">
             📋 Nueva Orden de Compra
           </h1>
+
+          {/* Mensaje de confirmación */}
+          {downloadMessage && (
+            <div className={`mb-6 p-4 rounded-lg border-2 ${
+              downloadSuccess 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <p className="font-semibold">{downloadMessage}</p>
+                <button
+                  onClick={() => {
+                    setDownloadSuccess(false);
+                    setDownloadMessage("");
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <input
@@ -474,6 +582,12 @@ const OrdenCompraPage = () => {
                 >
                   ♻️ Limpiar
                 </Button>
+                <Button
+                  onClick={clearTemporaryState}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  🗑️ Limpiar Temporal
+                </Button>
 
                 <Button
                   onClick={handleDownloadPDF}
@@ -505,7 +619,7 @@ const OrdenCompraPage = () => {
                       Generando PDF...
                     </div>
                   ) : (
-                    <>📥 Descargar PDF</>
+                    <>✅ Confirmar y Descargar PDF</>
                   )}
                 </Button>
               </div>

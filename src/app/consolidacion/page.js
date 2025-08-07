@@ -292,9 +292,6 @@ export default function ConsolidacionPage() {
   };
 
   const handleCategorizarTodasCuentas = async (categorizaciones) => {
-    setProcessing(true);
-    setError("");
-
     try {
       const formData = new FormData();
       
@@ -321,15 +318,18 @@ export default function ConsolidacionPage() {
       if (response.ok) {
         const blob = await response.blob();
         setResult(blob);
+        return blob; // Retornar el resultado para el modal
       } else {
         const data = await response.json();
-        setError(data.error || "Error al procesar la consolidación");
+        const errorMessage = data.error || "Error al procesar la consolidación";
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      setError("Error al procesar los archivos");
+      const errorMessage = "Error al procesar los archivos";
+      setError(errorMessage);
       console.error("Error:", error);
-    } finally {
-      setProcessing(false);
+      throw error;
     }
   };
 

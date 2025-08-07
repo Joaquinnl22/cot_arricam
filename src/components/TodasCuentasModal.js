@@ -6,7 +6,6 @@ const CATEGORIAS_DISPONIBLES = [
   { id: 'FLETES', nombre: 'FLETES', color: 'bg-blue-100 text-blue-800' },
   { id: 'SUELDOS_IMPOSIC', nombre: 'SUELDOS/IMPOSIC', color: 'bg-green-100 text-green-800' },
   { id: 'MATERIALES', nombre: 'MATERIALES', color: 'bg-yellow-100 text-yellow-800' },
-  { id: 'VEHICULOS', nombre: 'VEHICULOS', color: 'bg-red-100 text-red-800' },
   { id: 'VEHICULO_AUTOPISTAS', nombre: 'VEHICULO AUTOPISTAS', color: 'bg-orange-100 text-orange-800' },
   { id: 'VEHICULO_SEGUROS', nombre: 'VEHICULO SEGUROS', color: 'bg-pink-100 text-pink-800' },
   { id: 'PUBLICIDAD', nombre: 'PUBLICIDAD', color: 'bg-purple-100 text-purple-800' },
@@ -32,6 +31,8 @@ export default function TodasCuentasModal({
   onConfirmar 
 }) {
   const [categorizaciones, setCategorizaciones] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   const handleCategorizar = (movimientoId, categoria, tipoCuenta = null) => {
     setCategorizaciones(prev => ({
@@ -43,14 +44,35 @@ export default function TodasCuentasModal({
     }));
   };
 
-  const handleConfirmar = () => {
-    onConfirmar(categorizaciones);
-    setCategorizaciones({});
-    onClose();
+  const handleConfirmar = async () => {
+    setIsProcessing(true);
+    setDownloadError("");
+
+    try {
+      const result = await onConfirmar(categorizaciones);
+      
+      // Descargar automáticamente
+      if (result) {
+        const blob = new Blob([result], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "consolidacion_arricam.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      setDownloadError("Error al procesar la consolidación: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleCancelar = () => {
     setCategorizaciones({});
+    setDownloadError("");
     onClose();
   };
 
@@ -77,6 +99,21 @@ export default function TodasCuentasModal({
           <p className="text-gray-600 mb-6">
             Categoriza todos los movimientos. Los del Banco de Chile ya tienen tipo de cuenta predefinido por archivo.
           </p>
+
+          {/* Mensaje de error */}
+          {downloadError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-red-800 font-semibold">{downloadError}</span>
+                <button
+                  onClick={() => setDownloadError("")}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -186,11 +223,20 @@ export default function TodasCuentasModal({
               const tipoCuenta = cat?.tipoCuenta || mov.tipoCuenta;
               return categoria && categoria !== 'SIN_CATEGORIZAR' && 
                      (mov.banco !== 'Banco Santander' || tipoCuenta);
-            })}
+            }) || isProcessing}
             className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors flex items-center"
           >
-            <PiCheck className="mr-2" />
-            Confirmar Categorización
+            {isProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Procesando...
+              </>
+            ) : (
+              <>
+                <PiCheck className="mr-2" />
+                ✅ Confirmar y Descargar
+              </>
+            )}
           </button>
         </div>
       </div>
