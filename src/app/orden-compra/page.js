@@ -35,13 +35,22 @@ const OrdenCompraPage = () => {
 
   async function fetchContadorOrdenCompra() {
     try {
+      console.log("🔄 Iniciando fetchContadorOrdenCompra...");
       const res = await fetch("/api/contador-orden-compra");
       const data = await res.json();
+      console.log("📋 Respuesta completa:", data);
+      console.log("📋 Obteniendo contador:", data.valor);
+      console.log("📋 Tipo de valor:", typeof data.valor);
       setForm((f) => ({ ...f, numeroOrden: data.valor?.toString() || "1950" }));
+      console.log("✅ Formulario actualizado con número:", data.valor?.toString() || "1950");
     } catch (error) {
       console.error("❌ Error obteniendo contador de orden de compra", error);
+      // Si hay error, usar 1950 como fallback
+      setForm((f) => ({ ...f, numeroOrden: "1950" }));
     }
   }
+
+
 
   useEffect(() => {
     fetchContadorOrdenCompra();
@@ -117,9 +126,11 @@ const OrdenCompraPage = () => {
       }
 
       // Incrementar contador después de generar PDF exitosamente
-      await fetch("/api/contador-orden-compra", { method: "PATCH" });
-      await fetchContadorOrdenCompra();
-
+      console.log("🔄 Incrementando contador...");
+      const contadorRes = await fetch("/api/contador-orden-compra", { method: "PATCH" });
+      const contadorData = await contadorRes.json();
+      console.log("📊 Nuevo valor del contador:", contadorData.valor);
+      
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -131,6 +142,9 @@ const OrdenCompraPage = () => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
+      // Actualizar el formulario con el nuevo número de orden
+      await fetchContadorOrdenCompra();
     } catch (error) {
       console.error("Error:", error);
       alert("Ocurrió un error al descargar PDF");
@@ -139,7 +153,7 @@ const OrdenCompraPage = () => {
     }
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setForm({
       numeroOrden: "",
       fecha: new Date().toISOString().split("T")[0],
@@ -155,7 +169,7 @@ const OrdenCompraPage = () => {
     });
     setItems([]);
     setCustomItem({ descripcion: "", cantidad: 1, valor: 0 });
-    fetchContadorOrdenCompra(); // Obtener nuevo número de orden
+    await fetchContadorOrdenCompra(); // Obtener nuevo número de orden
   };
 
   const formatCLP = (value) =>
@@ -449,52 +463,53 @@ const OrdenCompraPage = () => {
 
 
 
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8">
-            <div className="text-xl font-semibold text-gray-700">
-              Total: {formatCLP(calculateTotal())}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8">
+              <div className="text-xl font-semibold text-gray-700">
+                Total: {formatCLP(calculateTotal())}
+              </div>
+              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                <Button
+                  onClick={resetForm}
+                  className="bg-gray-500 hover:bg-gray-600"
+                >
+                  ♻️ Limpiar
+                </Button>
+
+                <Button
+                  onClick={handleDownloadPDF}
+                  disabled={items.length === 0 || isDownloading}
+                  className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50"
+                >
+                  {isDownloading ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        ></path>
+                      </svg>
+                      Generando PDF...
+                    </div>
+                  ) : (
+                    <>📥 Descargar PDF</>
+                  )}
+                </Button>
+              </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-              <Button
-                onClick={resetForm}
-                className="bg-gray-500 hover:bg-gray-600"
-              >
-                ♻️ Limpiar
-              </Button>
-              <Button
-                onClick={handleDownloadPDF}
-                disabled={items.length === 0 || isDownloading}
-                className="bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50"
-              >
-                {isDownloading ? (
-                  <div className="flex items-center gap-2">
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      ></path>
-                    </svg>
-                    Generando PDF...
-                  </div>
-                ) : (
-                  <>📥 Descargar PDF</>
-                )}
-              </Button>
-            </div>
-          </div>
         </div>
       </main>
     </>
