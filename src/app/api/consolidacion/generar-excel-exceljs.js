@@ -482,6 +482,23 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   }
   
   datosDetalle.push(['']);
+  datosDetalle.push(['OTROS GASTOS']);
+  datosDetalle.push(['FECHA', 'DETALLE', 'MONTO', 'TIPO']);
+  
+  // Agregar movimientos de OTROS_GASTOS
+  if (categorias.OTROS_GASTOS) {
+    categorias.OTROS_GASTOS.forEach(mov => {
+      datosDetalle.push([
+        mov.fecha,
+        mov.descripcion,
+        formatearNumero(mov.monto),
+        mov.tipoCuenta === 'arriendo' ? 'ar' : mov.tipoCuenta === 'venta' ? 'vt' : 's'
+      ]);
+    });
+    datosDetalle.push(['', 'TOTAL OTROS GASTOS', formatearNumero(totalesPorCategoria.OTROS_GASTOS), '']);
+  }
+  
+  datosDetalle.push(['']);
   datosDetalle.push(['COMPRA CONTAINERS']);
   datosDetalle.push(['FECHA', 'DETALLE', 'MONTO', 'TIPO']);
   
@@ -555,7 +572,7 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   
   // Agregar movimientos de otros tipos
   const otrosMovimientos = movimientos.filter(mov => 
-    !['FLETES', 'CONTADOR_ABOGADO_REDES', 'VEHICULOS', 'VEHICULO_AUTOPISTAS', 'VEHICULO_SEGUROS', 'SUELDOS_IMPOSIC', 'MATERIALES', 'PUBLICIDAD', 'COMBUSTIBLE', 'ART_ESCRITORIO', 'IVA', 'RENTA', 'IMPTOS_BANCARIOS', 'REPUESTOS_REPARAC', 'CAJA_CHICA', 'COMPRA_CONTAINERS', 'INVERSIONES', 'DEVOLUCION_GARANTIAS', 'TRANSFERENCIAS'].includes(mov.categoria)
+    !['FLETES', 'CONTADOR_ABOGADO_REDES', 'VEHICULOS', 'VEHICULO_AUTOPISTAS', 'VEHICULO_SEGUROS', 'SUELDOS_IMPOSIC', 'MATERIALES', 'PUBLICIDAD', 'COMBUSTIBLE', 'ART_ESCRITORIO', 'IVA', 'RENTA', 'IMPTOS_BANCARIOS', 'REPUESTOS_REPARAC', 'CAJA_CHICA', 'OTROS_GASTOS', 'COMPRA_CONTAINERS', 'INVERSIONES', 'DEVOLUCION_GARANTIAS', 'TRANSFERENCIAS'].includes(mov.categoria)
   );
   
   otrosMovimientos.forEach(mov => {
