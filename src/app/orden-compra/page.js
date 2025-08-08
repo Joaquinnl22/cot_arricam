@@ -8,6 +8,8 @@ const OrdenCompraPage = () => {
     numeroOrden: "",
     fecha: new Date().toISOString().split("T")[0],
     empresa: "",
+    tipoEmpresa: "ferreteria", // Opciones: 'ferreteria', 'limiere', 'inmobiliaria'
+    vendedor: "",
     emitidaPor: "",
     solicitadaPor: "BODEGA",
     atencionDe: "",
@@ -178,6 +180,8 @@ const OrdenCompraPage = () => {
             observaciones: form.observaciones,
             direccionDespacho: form.incluirDespacho ? form.direccionDespacho : "",
             descuento: form.descuento,
+            tipoEmpresa: form.tipoEmpresa,
+            vendedor: form.vendedor,
           }),
         }
       );
@@ -242,6 +246,8 @@ const OrdenCompraPage = () => {
       numeroOrden: "",
       fecha: new Date().toISOString().split("T")[0],
       empresa: "",
+      tipoEmpresa: "ferreteria",
+      vendedor: "",
       emitidaPor: "",
       solicitadaPor: "BODEGA",
       atencionDe: "",
@@ -327,6 +333,21 @@ const OrdenCompraPage = () => {
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
             <select
+              value={form.tipoEmpresa}
+              onChange={(e) => setForm({ ...form, tipoEmpresa: e.target.value })}
+              className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              <option value="ferreteria">FERRETERIA Y COMERCIALIZADORA ARRICAM DOS SPA</option>
+              <option value="limiere">ARRICAM SPA (LIMIERE)</option>
+              <option value="inmobiliaria">Inmobiliaria Arricam Spa</option>
+            </select>
+            <input
+              placeholder="Vendedor"
+              value={form.vendedor}
+              onChange={(e) => setForm({ ...form, vendedor: e.target.value })}
+              className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            />
+            <select
               value={form.emitidaPor}
               onChange={(e) => setForm({ ...form, emitidaPor: e.target.value })}
               className="border border-gray-300 bg-gray-100 px-4 py-3 rounded focus:outline-none focus:ring-2 focus:ring-yellow-500"
@@ -384,6 +405,70 @@ const OrdenCompraPage = () => {
                 <span className="text-gray-600 font-medium">RETIRO</span>
               )}
             </div>
+          </div>
+
+          {/* Información de la empresa seleccionada */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              🏢 Información de la Empresa Seleccionada
+            </h3>
+            {(() => {
+              let datosEmpresa;
+              switch (form.tipoEmpresa) {
+                case 'limiere':
+                  datosEmpresa = {
+                    nombre: 'ARRICAM SPA',
+                    direccion: 'LIMIERE #0280-MAIPU',
+                    ciudad: 'SANTIAGO',
+                    telefono: '225356022-222329030',
+                    rut: '760.050457-2'
+                  };
+                  break;
+                case 'inmobiliaria':
+                  datosEmpresa = {
+                    nombre: 'Inmobiliaria Arricam Spa',
+                    direccion: 'Camino Lonquen parcela 48, Maipu',
+                    ciudad: 'Giro Inmobiliaria',
+                    telefono: '',
+                    rut: '96.876.650-3'
+                  };
+                  break;
+                case 'ferreteria':
+                default:
+                  datosEmpresa = {
+                    nombre: 'FERRETERIA Y COMERCIALIZADORA ARRICAM DOS SPA',
+                    direccion: 'GENERAL ORDOÑEZ #155',
+                    ciudad: 'MAIPU',
+                    telefono: '225356022-225359030',
+                    rut: '77,779,321-7'
+                  };
+                  break;
+              }
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-semibold text-blue-700">Nombre:</span>
+                    <p className="text-blue-800">{datosEmpresa.nombre}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">Dirección:</span>
+                    <p className="text-blue-800">{datosEmpresa.direccion}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">Ciudad/Giro:</span>
+                    <p className="text-blue-800">{datosEmpresa.ciudad}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">Teléfono:</span>
+                    <p className="text-blue-800">{datosEmpresa.telefono || 'No disponible'}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-blue-700">RUT:</span>
+                    <p className="text-blue-800">{datosEmpresa.rut}</p>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="mb-6">
