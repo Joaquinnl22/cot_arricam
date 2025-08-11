@@ -39,6 +39,47 @@ const QuotePage = () => {
   const [showCustomProduct, setShowCustomProduct] = useState(false);
   const [cuenta, setCuenta] = useState("");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
+
+  // Función para calcular la garantía automáticamente
+  const calcularGarantiaAutomatica = (itemsList) => {
+    console.log(`🔍 calcularGarantiaAutomatica llamado con:`, itemsList);
+    console.log(`🔍 tipoCotizacion: ${tipoCotizacion}, userEditedGarantia: ${userEditedGarantia}`);
+    
+    if (tipoCotizacion === "arriendo" && !userEditedGarantia) {
+      const containerCount = itemsList.reduce((sum, item) => {
+        // Buscar tanto "container" como abreviaciones comunes
+        const itemName = item.name.toLowerCase();
+        
+        // Patrones para identificar containers basados en los productos reales
+        const containerPatterns = [
+          // Patrones principales
+          "container", "contenedor", "modulo", "módulo", "casa", "habitat",
+          // Abreviaciones específicas de ARRICAM
+          "bba", "comaa", "ocbaa", "oplaa", "com", "cam", "opl",
+          // Variaciones de dimensiones
+          "caseta", "bod", "maritima", "marítima"
+        ];
+        
+        // Buscar por dimensiones típicas de containers (ej: 3x3, 3mx2,4m, 1,8mx2,5m)
+        const hasDimensions = /\d+[xX]\d+[,.]?\d*[m]?/i.test(item.name);
+        
+        // También buscar por números seguidos de "m" (metros)
+        const hasMeters = /\d+[m]/i.test(item.name);
+        
+        const isContainer = containerPatterns.some(pattern => itemName.includes(pattern)) || hasDimensions || hasMeters;
+        
+        // Log detallado para debug
+        const matchedPattern = containerPatterns.find(pattern => itemName.includes(pattern));
+        console.log(`🔍 Item: ${item.name} (${itemName}), quantity: ${item.quantity}, isContainer: ${isContainer}, hasDimensions: ${hasDimensions}, hasMeters: ${hasMeters}, matchedPattern: ${matchedPattern || 'none'}`);
+        return sum + (isContainer ? item.quantity : 0);
+      }, 0);
+      const nuevaGarantia = containerCount * 350000;
+      console.log(`🔄 Garantía recalculada: ${containerCount} containers × $350.000 = $${nuevaGarantia.toLocaleString()}`);
+      setMesGarantia(nuevaGarantia);
+    } else {
+      console.log(`❌ No se calcula garantía - tipoCotizacion: ${tipoCotizacion}, userEditedGarantia: ${userEditedGarantia}`);
+    }
+  };
   const personaData = {
     paola: { nombre: "Paola Hernandez", telefono: "+569 5816 8818" },
     alejandra: { nombre: "Alejandra Castro", telefono: "+569 5816 8819" },
@@ -112,8 +153,8 @@ const QuotePage = () => {
       (p) => p._id?.toString() === selectedProductId
     );
     if (product) {
-      setItems((prev) => [
-        ...prev,
+      const newItems = [
+        ...items,
         {
           name: product.nombre,
           price: product.precio,
@@ -122,15 +163,19 @@ const QuotePage = () => {
           mes: tipoCotizacion === "arriendo" ? 1 : undefined,
           image: null, // Nuevo campo para imagen
         },
-      ]);
+      ];
+      setItems(newItems);
       setSelectedProductId("");
+      
+      // Recalcular garantía automáticamente
+      calcularGarantiaAutomatica(newItems);
     }
   };
 
   const handleAddCustom = () => {
     if (customItem.name && customItem.price > 0) {
-      setItems((prev) => [
-        ...prev,
+      const newItems = [
+        ...items,
         {
           ...customItem,
           description: customItem.description || "-",
@@ -138,21 +183,33 @@ const QuotePage = () => {
           mes: tipoCotizacion === "arriendo" ? 1 : undefined,
           image: null, // Nuevo campo para imagen
         },
-      ]);
+      ];
+      setItems(newItems);
       setCustomItem({ name: "", price: 0, description: "" });
+      
+      // Recalcular garantía automáticamente
+      calcularGarantiaAutomatica(newItems);
     }
   };
 
   const handleQuantityChange = (index, value) => {
+    console.log(`🔍 handleQuantityChange - index: ${index}, value: ${value}`);
     const updated = [...items];
     updated[index].quantity = parseInt(value) || 1;
+    console.log(`🔍 Items actualizados:`, updated);
     setItems(updated);
+    
+    // Recalcular garantía automáticamente
+    calcularGarantiaAutomatica(updated);
   };
 
   const handleRemoveItem = (index) => {
     const updated = [...items];
     updated.splice(index, 1);
     setItems(updated);
+    
+    // Recalcular garantía automáticamente
+    calcularGarantiaAutomatica(updated);
   };
 
   // Nueva función para manejar la subida de imágenes por item
@@ -264,21 +321,22 @@ const QuotePage = () => {
   }
 
   useEffect(() => {
+    console.log(`🔄 useEffect principal - tipoCotizacion: ${tipoCotizacion}, items:`, items);
     if (tipoCotizacion === "arriendo") {
-      const containerCount = items.reduce((sum, item) => {
-        return (
-          sum +
-          (item.name.toLowerCase().includes("container") ? item.quantity : 0)
-        );
-      }, 0);
-      const sugerida = containerCount * 350000;
-      if (!userEditedGarantia) {
-        setMesGarantia(sugerida);
-      }
+      calcularGarantiaAutomatica(items);
     } else {
       setMesGarantia(0);
+      setUserEditedGarantia(false);
     }
   }, [tipoCotizacion, items]);
+
+  // useEffect adicional para recalcular garantía cuando cambien las cantidades
+  useEffect(() => {
+    console.log(`🔄 useEffect adicional - items:`, items, `tipoCotizacion: ${tipoCotizacion}, userEditedGarantia: ${userEditedGarantia}`);
+    if (tipoCotizacion === "arriendo" && !userEditedGarantia) {
+      calcularGarantiaAutomatica(items);
+    }
+  }, [items, tipoCotizacion, userEditedGarantia]); // Se ejecuta cuando cambien los items o el tipo
 
   const resetForm = () => {
     setForm({
@@ -292,6 +350,7 @@ const QuotePage = () => {
     setDispatch(0);
     setCustomItem({ name: "", price: 0 });
     setSelectedProductId("");
+    setUserEditedGarantia(false);
   };
 
   const toggleEdit = (i, val) => {
@@ -734,32 +793,71 @@ const QuotePage = () => {
                     <span className="text-gray-600 ml-1">
                       {formatCLP(
                         items.reduce(
-                          (sum, item) =>
-                            item.name.toLowerCase().includes("container")
-                              ? sum + item.quantity * 350000
-                              : sum,
+                          (sum, item) => {
+                            const itemName = item.name.toLowerCase();
+                            
+                            // Patrones para identificar containers basados en los productos reales
+                            const containerPatterns = [
+                              // Patrones principales
+                              "container", "contenedor", "modulo", "módulo", "casa", "habitat",
+                              // Abreviaciones específicas de ARRICAM
+                              "bba", "comaa", "ocbaa", "oplaa", "com", "cam", "opl",
+                              // Variaciones de dimensiones
+                              "caseta", "bod", "maritima", "marítima"
+                            ];
+                            
+                            // Buscar por dimensiones típicas de containers (ej: 3x3, 3mx2,4m, 1,8mx2,5m)
+                            const hasDimensions = /\d+[xX]\d+[,.]?\d*[m]?/i.test(item.name);
+                            
+                            // También buscar por números seguidos de "m" (metros)
+                            const hasMeters = /\d+[m]/i.test(item.name);
+                            
+                            const isContainer = containerPatterns.some(pattern => itemName.includes(pattern)) || hasDimensions || hasMeters;
+                            
+                            return isContainer ? sum + item.quantity * 350000 : sum;
+                          },
                           0
                         )
                       )}
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    name="mesGarantia"
-                    value={
-                      mesGarantia === 0
-                        ? ""
-                        : mesGarantia.toLocaleString("es-CL")
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value
-                        .replace(/\./g, "")
-                        .replace(/\D/g, "");
-                      setMesGarantia(parseInt(val || "0"));
-                      setUserEditedGarantia(true);
-                    }}
-                    className="border border-gray-300 bg-gray-100 px-4 py-2 rounded"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="mesGarantia"
+                      value={
+                        mesGarantia === 0
+                          ? ""
+                          : mesGarantia.toLocaleString("es-CL")
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                          .replace(/\./g, "")
+                          .replace(/\D/g, "");
+                        setMesGarantia(parseInt(val || "0"));
+                        setUserEditedGarantia(true);
+                      }}
+                      className={`border px-4 py-2 rounded w-full ${
+                        userEditedGarantia 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-300 bg-gray-100'
+                      }`}
+                      placeholder="Se calcula automáticamente"
+                    />
+                    {userEditedGarantia && (
+                      <div className="absolute -top-6 right-0 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                        ✏️ Editado manualmente
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Se calcula automáticamente: 350.000 × cantidad de containers
+                    {!userEditedGarantia && (
+                      <span className="text-green-600 font-medium ml-2">
+                        ✅ Calculando automáticamente
+                      </span>
+                    )}
+                  </p>
                 </div>
               )}
 
