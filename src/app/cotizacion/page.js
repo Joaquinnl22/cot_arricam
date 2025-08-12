@@ -86,7 +86,7 @@ const QuotePage = () => {
   }[persona];
   const cuentasData = {
     "comercializadora-arriendo": {
-      razon: "OMERCIALIZADORA Y ARRIENDOS ARRICAM SPA",
+      razon: "COMERCIALIZADORA Y ARRIENDOS ARRICAM SPA",
       rut: "76.050.457-2",
       direccion: "LUMIERE 0280, MAIPÚ",
       giro: "ARRENDAR CONTAINERS Y MÓDULOS",
