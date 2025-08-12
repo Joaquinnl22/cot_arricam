@@ -94,7 +94,7 @@ const QuotePage = () => {
       banco: "BANCO DE CHILE",
     },
     "comercializadora-venta": {
-      razon: "OMERCIALIZADORA Y ARRIENDOS ARRICAM SPA",
+      razon: "COMERCIALIZADORA Y ARRIENDOS ARRICAM SPA",
       rut: "76.050.457-2",
       direccion: "LUMIERE 0280, MAIPÚ",
       giro: "VENTA DE CONTAINERS",
