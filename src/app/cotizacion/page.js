@@ -14,7 +14,8 @@ const QuotePage = () => {
     mail: "",
     contacto: "",
     plano: "",
-    condiciones: "Valor del traslado no incluye rigger, ni certificaciones",
+    condiciones: `Valor del traslado no incluye rigger, ni certificaciones.
+Valor del flete incluye la entrega y retiro de los equipos`,
   });
   useEffect(() => {
     fetch("https://arricam-pdf-service.onrender.com/")
