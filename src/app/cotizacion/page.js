@@ -250,40 +250,53 @@ const QuotePage = () => {
     }
 
     setIsDownloading(true);
+    
+    // Preparar los datos a enviar
+    const requestData = {
+      type: tipoCotizacion,
+      date: form.date,
+      quoteNumber: form.quoteNumber,
+      client: form.client,
+      company: form.company,
+      items,
+      city: form.city,
+      dispatch,
+      mesGarantia,
+      responsable: personaData.nombre,
+      telefono: personaData.telefono,
+      mail: form.mail,
+      contacto: form.contacto,
+      condiciones: form.condiciones || "", // Campo principal que espera el backend
+      observaciones: form.condiciones || "", // Campo alternativo
+      planoDescripcion: form.plano || "",
+      razon: cuentaSeleccionada?.razon || "",
+      rut: cuentaSeleccionada?.rut || "",
+      direccion: cuentaSeleccionada?.direccion || "",
+      giro: cuentaSeleccionada?.giro || "",
+      banco: cuentaSeleccionada?.banco || "",
+      cuenta: cuentaSeleccionada?.cuenta || "",
+    };
+    
+    console.log("📤 Datos enviados al servidor:", requestData);
+    console.log("📤 Campo 'condiciones' específicamente:", requestData.condiciones);
+    console.log("📤 Campo 'observaciones' específicamente:", requestData.observaciones);
+    console.log("📤 form.condiciones original:", form.condiciones);
+    console.log("📤 JSON.stringify completo:", JSON.stringify(requestData, null, 2));
+    
     try {
       const res = await fetch(
         "https://arricam-pdf-service.onrender.com/api/generatepdf",
-        {
+                {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: tipoCotizacion,
-            date: form.date,
-            quoteNumber: form.quoteNumber,
-            client: form.client,
-            company: form.company,
-            items,
-            city: form.city,
-            mesGarantia,
-            dispatch,
-            responsable: personaData.nombre,
-            telefono: personaData.telefono,
-            mail: form.mail,
-            contacto: form.contacto,
-            plano: form.plano,
-            condiciones: form.condiciones,
-            razon: cuentaSeleccionada?.razon || "",
-            rut: cuentaSeleccionada?.rut || "",
-            direccion: cuentaSeleccionada?.direccion || "",
-            giro: cuentaSeleccionada?.giro || "",
-            banco: cuentaSeleccionada?.banco || "",
-            cuenta: cuentaSeleccionada?.cuenta || "",
-          }),
+          body: JSON.stringify(requestData),
         }
       );
 
       if (!res.ok) {
-        alert("Error al generar PDF");
+        const errorText = await res.text();
+        console.error("Error del servidor:", res.status, errorText);
+        alert(`Error al generar PDF: ${res.status} - ${res.statusText}`);
         setIsDownloading(false);
         return;
       }
@@ -304,7 +317,8 @@ const QuotePage = () => {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
-      alert("Ocurrió un error al descargar PDF");
+      console.error("Error completo:", error);
+      alert(`Error al descargar PDF: ${error.message}`);
     } finally {
       setIsDownloading(false);
     }
