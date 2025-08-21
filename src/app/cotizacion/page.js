@@ -17,11 +17,18 @@ const QuotePage = () => {
     condiciones: `Valor del traslado no incluye rigger, ni certificaciones.
 Valor del flete incluye la entrega y retiro de los equipos`,
   });
-  useEffect(() => {
-    fetch("https://arricam-pdf-service.onrender.com/")
-      .then(() => console.log("🔄 API activada"))
-      .catch(() => console.warn("⚠️ No se pudo hacer pre-warm"));
-  }, []);
+useEffect(() => {
+  const wakeServer = async () => {
+    try {
+      const res = await fetch("https://arricam-pdf-service.onrender.com/");
+      if (res.ok) console.log("🔄 API activada");
+    } catch (err) {
+      console.warn("⚠️ No se pudo hacer pre-warm, reintentando...");
+      setTimeout(wakeServer, 3000); // reintenta en 3s
+    }
+  };
+  wakeServer();
+}, []);
 
   const [tipoCotizacion, setTipoCotizacion] = useState("venta");
   const [items, setItems] = useState([]);
@@ -285,9 +292,9 @@ Valor del flete incluye la entrega y retiro de los equipos`,
     console.log("📤 JSON.stringify completo:", JSON.stringify(requestData, null, 2));
     
     try {
-      const res = await fetch(
+      const res = await fetchWithRetry(
         "https://arricam-pdf-service.onrender.com/api/generatepdf",
-                {
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestData),
