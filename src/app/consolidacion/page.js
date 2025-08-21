@@ -18,20 +18,38 @@ export default function ConsolidacionPage() {
   
   // Nuevo estado para valores fijos
   const [valoresFijos, setValoresFijos] = useState({
-    // Banco de Chile - Arriendo (168-06824-09)
+    // ARRICAM - Banco de Chile - Arriendo (168-06824-09)
     bancoChileArriendo: {
       saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
-    // Banco de Chile - Venta (168-08475-09)
+    // ARRICAM - Banco de Chile - Venta (168-08475-09)
     bancoChileVenta: {
       saldoInicial: '',
       abonos: '',
       lineaCredito: ''
     },
-    // Banco Santander (6866228-1)
+    // ARRICAM - Banco Santander (6866228-1)
     bancoSantander: {
+      saldoInicial: '',
+      abonos: '',
+      lineaCredito: ''
+    },
+    // NUEVA EMPRESA - Banco de Chile - Arriendo (168-11115-02)
+    nuevaEmpresaBancoChileArriendo: {
+      saldoInicial: '',
+      abonos: '',
+      lineaCredito: ''
+    },
+    // NUEVA EMPRESA - Banco de Chile - Venta (168-13961-08)
+    nuevaEmpresaBancoChileVenta: {
+      saldoInicial: '',
+      abonos: '',
+      lineaCredito: ''
+    },
+    // NUEVA EMPRESA - Banco Santander (9208349-7)
+    nuevaEmpresaBancoSantander: {
       saldoInicial: '',
       abonos: '',
       lineaCredito: ''
@@ -112,6 +130,21 @@ export default function ConsolidacionPage() {
               ...prev.bancoSantander,
               abonos: data.abonosCalculados.bancoSantander || 0,
               saldoInicial: data.saldoInicialSantanderFormateado || prev.bancoSantander.saldoInicial
+            },
+            nuevaEmpresaBancoChileArriendo: {
+              ...prev.nuevaEmpresaBancoChileArriendo,
+              abonos: data.abonosCalculados.nuevaEmpresaBancoChileArriendo || 0,
+              saldoInicial: data.saldoInicialNuevaEmpresaChileArriendoFormateado || prev.nuevaEmpresaBancoChileArriendo.saldoInicial
+            },
+            nuevaEmpresaBancoChileVenta: {
+              ...prev.nuevaEmpresaBancoChileVenta,
+              abonos: data.abonosCalculados.nuevaEmpresaBancoChileVenta || 0,
+              saldoInicial: data.saldoInicialNuevaEmpresaChileVentaFormateado || prev.nuevaEmpresaBancoChileVenta.saldoInicial
+            },
+            nuevaEmpresaBancoSantander: {
+              ...prev.nuevaEmpresaBancoSantander,
+              abonos: data.abonosCalculados.nuevaEmpresaBancoSantander || 0,
+              saldoInicial: data.saldoInicialNuevaEmpresaSantanderFormateado || prev.nuevaEmpresaBancoSantander.saldoInicial
             }
           }));
         }
@@ -184,6 +217,21 @@ export default function ConsolidacionPage() {
                 ...prev.bancoSantander,
                 abonos: data.abonosCalculados.bancoSantander || 0,
                 saldoInicial: data.saldoInicialSantanderFormateado || prev.bancoSantander.saldoInicial
+              },
+              nuevaEmpresaBancoChileArriendo: {
+                ...prev.nuevaEmpresaBancoChileArriendo,
+                abonos: data.abonosCalculados.nuevaEmpresaBancoChileArriendo || 0,
+                saldoInicial: data.saldoInicialNuevaEmpresaChileArriendoFormateado || prev.nuevaEmpresaBancoChileArriendo.saldoInicial
+              },
+              nuevaEmpresaBancoChileVenta: {
+                ...prev.nuevaEmpresaBancoChileVenta,
+                abonos: data.abonosCalculados.nuevaEmpresaBancoChileVenta || 0,
+                saldoInicial: data.saldoInicialNuevaEmpresaChileVentaFormateado || prev.nuevaEmpresaBancoChileVenta.saldoInicial
+              },
+              nuevaEmpresaBancoSantander: {
+                ...prev.nuevaEmpresaBancoSantander,
+                abonos: data.abonosCalculados.nuevaEmpresaBancoSantander || 0,
+                saldoInicial: data.saldoInicialNuevaEmpresaSantanderFormateado || prev.nuevaEmpresaBancoSantander.saldoInicial
               }
             };
             
@@ -383,7 +431,8 @@ export default function ConsolidacionPage() {
             Consolidación de Cuentas
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Procesa 2 archivos Excel del Banco de Chile (.xls) y un archivo del Banco Santander (.xlsx) para generar un reporte consolidado de gastos Arricam.
+            Procesa archivos Excel del Banco de Chile (.xls) y Banco Santander (.xlsx) para generar un reporte consolidado de gastos. 
+            Incluye cuentas de ARRICAM y nueva empresa (cuentas que pueden no tener movimientos mensuales).
           </p>
         </section>
 
@@ -660,11 +709,185 @@ export default function ConsolidacionPage() {
                     />
                   </div>
                 </div>
+                          </div>
+          </div>
+
+          {/* Separador visual */}
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full">
+              <span className="text-lg font-bold">🏢 NUEVA EMPRESA - CUENTAS ADICIONALES</span>
+            </div>
+          </div>
+
+          {/* Nueva Empresa - Valores Fijos */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-blue-300">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Nueva Empresa - Valores Fijos</h3>
+              <p className="text-sm text-gray-600">Cuentas adicionales que pueden no tener movimientos mensuales</p>
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700 font-medium">💡 Algunas cuentas pueden no tener movimientos mensuales</p>
+                <p className="text-xs text-blue-600 mt-1">Los saldos iniciales se ingresan manualmente desde las cartolas</p>
               </div>
             </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Nueva Empresa - Banco de Chile - Arriendo */}
+              <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-blue-700 text-lg">Nueva Empresa - Banco de Chile - Arriendo</h4>
+                  <p className="text-xs text-gray-500">Cuenta: 168-11115-02</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="text"
+                      placeholder="0"
+                      value={valoresFijos.nuevaEmpresaBancoChileArriendo.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoChileArriendo', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Abonos
+                      <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                      {calculandoAbonos && (
+                        <span className="ml-1 text-xs text-blue-600">🔄 Calculando...</span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={calculandoAbonos ? "Calculando..." : "0"}
+                      value={calculandoAbonos ? "" : formatearNumero(valoresFijos.nuevaEmpresaBancoChileArriendo.abonos)}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoChileArriendo', 'abonos', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm ${
+                        calculandoAbonos 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-green-300 bg-green-50'
+                      }`}
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Crédito</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.nuevaEmpresaBancoChileArriendo.lineaCredito}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoChileArriendo', 'lineaCredito', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
 
-            {/* Otros valores fijos */}
-            <div className="mt-8 bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+              {/* Nueva Empresa - Banco de Chile - Venta */}
+              <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-green-700 text-lg">Nueva Empresa - Banco de Chile - Venta</h4>
+                  <p className="text-xs text-gray-500">Cuenta: 168-13961-08</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="text"
+                      placeholder="0"
+                      value={valoresFijos.nuevaEmpresaBancoChileVenta.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoChileVenta', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Abonos
+                      <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                      {calculandoAbonos && (
+                        <span className="ml-1 text-xs text-blue-600">🔄 Calculando...</span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={calculandoAbonos ? "Calculando..." : "0"}
+                      value={calculandoAbonos ? "" : formatearNumero(valoresFijos.nuevaEmpresaBancoChileVenta.abonos)}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoChileVenta', 'abonos', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm ${
+                        calculandoAbonos 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-green-300 bg-green-50'
+                      }`}
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Crédito</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.nuevaEmpresaBancoChileVenta.lineaCredito}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoChileVenta', 'lineaCredito', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nueva Empresa - Banco Santander */}
+              <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+                <div className="text-center mb-4">
+                  <h4 className="font-bold text-red-700 text-lg">Nueva Empresa - Banco Santander</h4>
+                  <p className="text-xs text-gray-500">Cuenta: 9208349-7</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial</label>
+                    <input
+                      type="text"
+                      placeholder="0"
+                      value={valoresFijos.nuevaEmpresaBancoSantander.saldoInicial}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoSantander', 'saldoInicial', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Abonos
+                      <span className="ml-1 text-xs text-green-600">(Calculado automáticamente)</span>
+                      {calculandoAbonos && (
+                        <span className="ml-1 text-xs text-blue-600">🔄 Calculando...</span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={calculandoAbonos ? "Calculando..." : "0"}
+                      value={calculandoAbonos ? "" : formatearNumero(valoresFijos.nuevaEmpresaBancoSantander.abonos)}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoSantander', 'abonos', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm ${
+                        calculandoAbonos 
+                          ? 'border-blue-300 bg-blue-50' 
+                          : 'border-green-300 bg-green-50'
+                      }`}
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Línea de Crédito</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={valoresFijos.nuevaEmpresaBancoSantander.lineaCredito}
+                      onChange={(e) => handleValorFijoChange('nuevaEmpresaBancoSantander', 'lineaCredito', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Otros valores fijos */}
+          <div className="mt-8 bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
               <h4 className="font-bold text-purple-700 text-lg mb-4 text-center">Otros Valores</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -779,6 +1002,8 @@ export default function ConsolidacionPage() {
                    <li>• Formato estándar Arricam</li>
                    <li>• Abonos calculados automáticamente de las cartolas</li>
                    <li>• Saldos iniciales ingresados manualmente desde las cartolas</li>
+                   <li>• Soporte para cuentas adicionales de nueva empresa</li>
+                   <li>• Manejo de cuentas sin movimientos mensuales</li>
                  </ul>
                </div>
             </div>
