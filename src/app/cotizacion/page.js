@@ -4,6 +4,20 @@ import { Button } from "../../components/ui/button";
 import Navbar from "../../components/Navbar/NavBar";
 import { PiAlignCenterVerticalSimple } from "react-icons/pi";
 
+async function fetchWithRetry(url, options, retries = 3, backoff = 2000) {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res;
+  } catch (err) {
+    if (retries > 0) {
+      console.warn(`⏳ Error en fetch, reintentando en ${backoff/1000}s... (${retries} restantes)`);
+      await new Promise(r => setTimeout(r, backoff));
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    throw err;
+  }
+}
 const QuotePage = () => {
   const [form, setForm] = useState({
     company: "",
@@ -47,6 +61,10 @@ useEffect(() => {
   const [showCustomProduct, setShowCustomProduct] = useState(false);
   const [cuenta, setCuenta] = useState("");
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState(null);
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+
 
   // Función para calcular la garantía automáticamente
   const calcularGarantiaAutomatica = (itemsList) => {
@@ -243,7 +261,6 @@ useEffect(() => {
     setItems(updated);
   };
 
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadPDF = async () => {
     if (!tipoCotizacion) {
