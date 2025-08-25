@@ -27,7 +27,7 @@ export async function PATCH() {
   }
   
   // Calcular nuevo valor
-  const newValue = currentDoc.value + 5;
+  const newValue = currentDoc.value + 1;
   console.log("📈 Incrementando de", currentDoc.value, "a", newValue);
   
   // Actualizar con el nuevo valor
