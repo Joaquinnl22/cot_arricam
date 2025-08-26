@@ -6,8 +6,26 @@ function formatearNumero(numero) {
   return numero.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+// Función para parsear números con formato de puntos de miles
+function parsearNumeroConFormato(valor) {
+  if (valor === null || valor === undefined || valor === '') return 0;
+  
+  // Si ya es un número, retornarlo
+  if (typeof valor === 'number') return valor;
+  
+  // Si es string, limpiar formato y convertir
+  if (typeof valor === 'string') {
+    // Remover TODOS los puntos (separadores de miles) y comas, convertir a número
+    const numeroLimpio = valor.replace(/\./g, '').replace(',', '.');
+    const numero = parseFloat(numeroLimpio);
+    return isNaN(numero) ? 0 : numero;
+  }
+  
+  return 0;
+}
+
 // Función para generar el reporte consolidado con ExcelJS
-export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos = null) {
+export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos = null, empresaSeleccionada = 'arricam') {
   // Calcular el mes anterior al actual
   const fechaActual = new Date();
   const mesAnterior = new Date(fechaActual.getFullYear(), fechaActual.getMonth() - 1, 1);
@@ -15,11 +33,16 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   const nombreMesAnteriorCorto = mesAnterior.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
   const añoAnterior = mesAnterior.getFullYear();
   
+  console.log(`🏢 Generando Excel para empresa: ${empresaSeleccionada}`);
+  
   // Valores fijos por defecto si no se proporcionan
   const valoresPorDefecto = {
     bancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
     bancoChileVenta: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
     bancoSantander: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    ferreteriaBancoChileArriendo: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    ferreteriaBancoChileVenta: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
+    ferreteriaBancoSantander: { saldoInicial: 0, abonos: 0, lineaCredito: 0 },
     abonosXPagos: 0,
     rescteFdosMut: 0
   };
@@ -29,39 +52,48 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   // Convertir todos los valores a números para evitar problemas de concatenación
   const valoresNumericos = {
     bancoChileArriendo: { 
-      saldoInicial: Number(valores.bancoChileArriendo.saldoInicial) || 0, 
-      abonos: Number(valores.bancoChileArriendo.abonos) || 0, 
-      lineaCredito: Number(valores.bancoChileArriendo.lineaCredito) || 0 
+      saldoInicial: parsearNumeroConFormato(valores.bancoChileArriendo.saldoInicial), 
+      abonos: parsearNumeroConFormato(valores.bancoChileArriendo.abonos), 
+      lineaCredito: parsearNumeroConFormato(valores.bancoChileArriendo.lineaCredito) 
     },
     bancoChileVenta: { 
-      saldoInicial: Number(valores.bancoChileVenta.saldoInicial) || 0, 
-      abonos: Number(valores.bancoChileVenta.abonos) || 0, 
-      lineaCredito: Number(valores.bancoChileVenta.lineaCredito) || 0 
+      saldoInicial: parsearNumeroConFormato(valores.bancoChileVenta.saldoInicial), 
+      abonos: parsearNumeroConFormato(valores.bancoChileVenta.abonos), 
+      lineaCredito: parsearNumeroConFormato(valores.bancoChileVenta.lineaCredito) 
     },
     bancoSantander: { 
-      saldoInicial: Number(valores.bancoSantander.saldoInicial) || 0, 
-      abonos: Number(valores.bancoSantander.abonos) || 0, 
-      lineaCredito: Number(valores.bancoSantander.lineaCredito) || 0 
+      saldoInicial: parsearNumeroConFormato(valores.bancoSantander.saldoInicial), 
+      abonos: parsearNumeroConFormato(valores.bancoSantander.abonos), 
+      lineaCredito: parsearNumeroConFormato(valores.bancoSantander.lineaCredito) 
     },
-    abonosXPagos: Number(valores.abonosXPagos) || 0,
-    rescteFdosMut: Number(valores.rescteFdosMut) || 0
+    ferreteriaBancoChileArriendo: { 
+      saldoInicial: parsearNumeroConFormato(valores.ferreteriaBancoChileArriendo?.saldoInicial), 
+      abonos: parsearNumeroConFormato(valores.ferreteriaBancoChileArriendo?.abonos), 
+      lineaCredito: parsearNumeroConFormato(valores.ferreteriaBancoChileArriendo?.lineaCredito) 
+    },
+    ferreteriaBancoChileVenta: { 
+      saldoInicial: parsearNumeroConFormato(valores.ferreteriaBancoChileVenta?.saldoInicial), 
+      abonos: parsearNumeroConFormato(valores.ferreteriaBancoChileVenta?.abonos), 
+      lineaCredito: parsearNumeroConFormato(valores.ferreteriaBancoChileVenta?.lineaCredito) 
+    },
+    ferreteriaBancoSantander: { 
+      saldoInicial: parsearNumeroConFormato(valores.ferreteriaBancoSantander?.saldoInicial), 
+      abonos: parsearNumeroConFormato(valores.ferreteriaBancoSantander?.abonos), 
+      lineaCredito: parsearNumeroConFormato(valores.ferreteriaBancoSantander?.lineaCredito) 
+    },
+    abonosXPagos: parsearNumeroConFormato(valores.abonosXPagos),
+    rescteFdosMut: parsearNumeroConFormato(valores.rescteFdosMut)
   };
   
   // Debug: Log de valores para verificar
-  console.log('🔍 Valores fijos recibidos:', valores);
-  console.log('🔍 Valores numéricos convertidos:', valoresNumericos);
+  console.log('🔍 Valores fijos recibidos');
+  console.log('🔍 Valores numéricos convertidos');
   
   // Log específico de saldos iniciales
-  console.log('💰 Saldos iniciales:');
-  console.log(`  - Banco Chile Arriendo: ${formatearNumero(valoresNumericos.bancoChileArriendo.saldoInicial)}`);
-  console.log(`  - Banco Chile Venta: ${formatearNumero(valoresNumericos.bancoChileVenta.saldoInicial)}`);
-  console.log(`  - Banco Santander: ${formatearNumero(valoresNumericos.bancoSantander.saldoInicial)}`);
+  console.log('💰 Saldos iniciales convertidos');
   
   // Log específico de abonos
-  console.log('💰 Abonos:');
-  console.log(`  - Banco Chile Arriendo: ${formatearNumero(valoresNumericos.bancoChileArriendo.abonos)}`);
-  console.log(`  - Banco Chile Venta: ${formatearNumero(valoresNumericos.bancoChileVenta.abonos)}`);
-  console.log(`  - Banco Santander: ${formatearNumero(valoresNumericos.bancoSantander.abonos)}`);
+  console.log('💰 Abonos convertidos');
   
   // Agrupar por categorías
   const categorias = {};
@@ -76,40 +108,78 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   // Crear workbook con ExcelJS
   const workbook = new ExcelJS.Workbook();
   
-  // Calcular totales por cuenta
-  const totalesPorCuenta = {
-    'Banco de Chile - Arriendo': { gastos: 0, abonos: valoresNumericos.bancoChileArriendo.abonos, saldoInicial: valoresNumericos.bancoChileArriendo.saldoInicial },
-    'Banco de Chile - Venta': { gastos: 0, abonos: valoresNumericos.bancoChileVenta.abonos, saldoInicial: valoresNumericos.bancoChileVenta.saldoInicial },
-    'Banco Santander': { gastos: 0, abonos: valoresNumericos.bancoSantander.abonos, saldoInicial: valoresNumericos.bancoSantander.saldoInicial }
-  };
+  // Calcular totales por cuenta según la empresa seleccionada
+  let totalesPorCuenta = {};
+  
+  if (empresaSeleccionada === 'arricam') {
+    // Solo cuentas de ARRICAM
+    totalesPorCuenta = {
+      'Banco de Chile - Arriendo': { gastos: 0, abonos: valoresNumericos.bancoChileArriendo.abonos, saldoInicial: valoresNumericos.bancoChileArriendo.saldoInicial },
+      'Banco de Chile - Venta': { gastos: 0, abonos: valoresNumericos.bancoChileVenta.abonos, saldoInicial: valoresNumericos.bancoChileVenta.saldoInicial },
+      'Banco Santander': { gastos: 0, abonos: valoresNumericos.bancoSantander.abonos, saldoInicial: valoresNumericos.bancoSantander.saldoInicial }
+    };
+  } else if (empresaSeleccionada === 'ferreteria') {
+    // Solo cuentas de FERRETERIA
+    totalesPorCuenta = {
+      'Ferreteria Banco Chile - Arriendo': { gastos: 0, abonos: valoresNumericos.ferreteriaBancoChileArriendo.abonos, saldoInicial: valoresNumericos.ferreteriaBancoChileArriendo.saldoInicial },
+      'Ferreteria Banco Chile - Venta': { gastos: 0, abonos: valoresNumericos.ferreteriaBancoChileVenta.abonos, saldoInicial: valoresNumericos.ferreteriaBancoChileVenta.saldoInicial },
+      'Ferreteria Banco Santander': { gastos: 0, abonos: valoresNumericos.ferreteriaBancoSantander.abonos, saldoInicial: valoresNumericos.ferreteriaBancoSantander.saldoInicial }
+    };
+  }
   
   movimientos.forEach(mov => {
-    if (mov.banco === 'Banco de Chile') {
-      if (mov.tipoCuenta === 'arriendo') {
-        totalesPorCuenta['Banco de Chile - Arriendo'].gastos += mov.monto;
-      } else {
-        totalesPorCuenta['Banco de Chile - Venta'].gastos += mov.monto;
+    if (empresaSeleccionada === 'arricam') {
+      // Solo procesar movimientos de ARRICAM
+      if (mov.banco === 'Banco de Chile') {
+        if (mov.tipoCuenta === 'arriendo') {
+          totalesPorCuenta['Banco de Chile - Arriendo'].gastos += mov.monto;
+        } else {
+          totalesPorCuenta['Banco de Chile - Venta'].gastos += mov.monto;
+        }
+      } else if (mov.banco === 'Banco Santander') {
+        totalesPorCuenta['Banco Santander'].gastos += mov.monto;
       }
-    } else if (mov.banco === 'Banco Santander') {
-      totalesPorCuenta['Banco Santander'].gastos += mov.monto;
+    } else if (empresaSeleccionada === 'ferreteria') {
+      // Solo procesar movimientos de FERRETERIA
+      if (mov.banco === 'Ferreteria Banco Chile') {
+        if (mov.tipoCuenta === 'arriendo') {
+          totalesPorCuenta['Ferreteria Banco Chile - Arriendo'].gastos += mov.monto;
+        } else {
+          totalesPorCuenta['Ferreteria Banco Chile - Venta'].gastos += mov.monto;
+        }
+      } else if (mov.banco === 'Ferreteria Banco Santander') {
+        totalesPorCuenta['Ferreteria Banco Santander'].gastos += mov.monto;
+      }
     }
   });
   
-  // Log de totales por cuenta
-  console.log('📊 Totales por cuenta:');
-  console.log('  - Banco Chile Arriendo:', totalesPorCuenta['Banco de Chile - Arriendo']);
-  console.log('  - Banco Chile Venta:', totalesPorCuenta['Banco de Chile - Venta']);
-  console.log('  - Banco Santander:', totalesPorCuenta['Banco Santander']);
+  // Log de totales por cuenta según la empresa seleccionada
+  console.log(`📊 Totales por cuenta: ${empresaSeleccionada.toUpperCase()}`);
   
-  // Log de cálculos finales
-  const saldoInicialTotal = totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial;
-  const abonosTotal = valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos;
+  // Log de cálculos finales según la empresa seleccionada
+  let saldoInicialTotal = 0;
+  let abonosTotal = 0;
+  
+  if (empresaSeleccionada === 'arricam') {
+    // Solo cuentas de ARRICAM
+    saldoInicialTotal = totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + 
+                       totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + 
+                       totalesPorCuenta['Banco Santander'].saldoInicial;
+    abonosTotal = valoresNumericos.bancoChileArriendo.abonos + 
+                  valoresNumericos.bancoChileVenta.abonos + 
+                  valoresNumericos.bancoSantander.abonos;
+  } else if (empresaSeleccionada === 'ferreteria') {
+    // Solo cuentas de FERRETERIA
+    saldoInicialTotal = totalesPorCuenta['Ferreteria Banco Chile - Arriendo'].saldoInicial + 
+                       totalesPorCuenta['Ferreteria Banco Chile - Venta'].saldoInicial + 
+                       totalesPorCuenta['Ferreteria Banco Santander'].saldoInicial;
+    abonosTotal = valoresNumericos.ferreteriaBancoChileArriendo.abonos + 
+                  valoresNumericos.ferreteriaBancoChileVenta.abonos + 
+                  valoresNumericos.ferreteriaBancoSantander.abonos;
+  }
   const totalIngresos = saldoInicialTotal + abonosTotal;
   
-  console.log('💰 Cálculos finales:');
-  console.log(`  - Saldo inicial total: ${formatearNumero(saldoInicialTotal)}`);
-  console.log(`  - Abonos total: ${formatearNumero(abonosTotal)}`);
-  console.log(`  - Total ingresos: ${formatearNumero(totalIngresos)}`);
+  console.log(`💰 Totales: Saldo inicial ${formatearNumero(saldoInicialTotal)}, Abonos ${formatearNumero(abonosTotal)}, Total ${formatearNumero(totalIngresos)}`);
   
   // Calcular totales por categoría
   const totalesPorCategoria = {};
@@ -165,13 +235,13 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     ['TOTAL INVERSIONES', '', formatearNumero((totalesPorCategoria.COMPRA_CONTAINERS || 0) + (totalesPorCategoria.INVERSIONES || 0) + (totalesPorCategoria.DEVOLUCION_GARANTIAS || 0))],
     [''],
     ['TRANSFERENCIAS', '', formatearNumero(totalesPorCategoria.TRANSFERENCIAS || 0)],
-    ['REDEPOSITOS /CHQ PROTEST', '', formatearNumero(0)], // Se calcula por diferencia
-    ['TOT. GRAL MOVIMIENTOS', '', formatearNumero(movimientos.filter(mov => mov.tipo === 'gasto').reduce((sum, mov) => sum + mov.monto, 0))],
+    ['REDEPOSITOS /CHQ PROTEST', '', ''], // Campo para llenar manualmente
+    ['TOT. GRAL MOVIMIENTOS', '', formatearNumero(movimientos.filter(mov => mov.categoria && mov.categoria !== 'TRANSFERENCIAS').reduce((sum, mov) => sum + Math.abs(mov.monto), 0))],
     [''],
-    ['SALDO INICIAL', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial)],
-    ['ABONOS X PAGOS', '', formatearNumero(valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos)],
+    ['SALDO INICIAL', '', formatearNumero(saldoInicialTotal)],
+    ['ABONOS X PAGOS', '', formatearNumero(abonosTotal)],
     ['RESCTE FDOS MUT/OTROS', '', formatearNumero(valoresNumericos.rescteFdosMut)],
-    ['TOTAL INGRESOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.bancoChileArriendo.abonos + valoresNumericos.bancoChileVenta.abonos + valoresNumericos.bancoSantander.abonos)]
+    ['TOTAL INGRESOS', '', formatearNumero(saldoInicialTotal + abonosTotal)]
   ];
   
   // Agregar datos a la hoja de consolidación
@@ -220,15 +290,29 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
   const worksheetDetalle = workbook.addWorksheet('Detalle');
   
   // Datos de detalle
-  const datosDetalle = [
-    ['DETALLE GASTOS ARRICAM SPA'],
-    ['BCO CHILE CTA NRO.168-06824-09*168-08475-09'],
-    ['BANCO SANTANDER NRO. 6866228-1'],
-    ['DESDE', `01-${String(mesAnterior.getMonth() + 1).padStart(2, '0')}-${añoAnterior}`],
-    [''],
-    ['FLETES'],
-    ['FECHA', 'DETALLE', 'MONTO', 'TIPO']
-  ];
+  let datosDetalle = [];
+  
+  if (empresaSeleccionada === 'arricam') {
+    datosDetalle = [
+      ['DETALLE GASTOS ARRICAM SPA'],
+      ['BCO CHILE CTA NRO.168-06824-09*168-08475-09'],
+      ['BANCO SANTANDER NRO. 6866228-1'],
+      ['DESDE', `01-${String(mesAnterior.getMonth() + 1).padStart(2, '0')}-${añoAnterior}`],
+      [''],
+      ['FLETES'],
+      ['FECHA', 'DETALLE', 'MONTO', 'TIPO']
+    ];
+  } else if (empresaSeleccionada === 'ferreteria') {
+    datosDetalle = [
+      ['DETALLE GASTOS FERRETERIA'],
+      ['BCO CHILE CTA NRO.168-11115-02*168-13961-08'],
+      ['BANCO SANTANDER NRO. 0-000-9208349-7'],
+      ['DESDE', `01-${String(mesAnterior.getMonth() + 1).padStart(2, '0')}-${añoAnterior}`],
+      [''],
+      ['FLETES'],
+      ['FECHA', 'DETALLE', 'MONTO', 'TIPO']
+    ];
+  }
   
   // Agregar movimientos de FLETES
   if (categorias.FLETES) {
@@ -584,38 +668,77 @@ export async function generarReporteConsolidadoExcelJS(movimientos, valoresFijos
     ]);
   });
   
-  // Agregar resumen de cuentas al final
-  datosDetalle.push(['']);
-  datosDetalle.push(['CTA. CTE. ARRDOS NRO. 168-06824-09']);
-  datosDetalle.push(['SALDO INICIAL CHILE', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial)]);
-  datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.bancoChileArriendo.abonos)]);
-  datosDetalle.push(['OTRO ABONO', '', '']);
-  datosDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + valoresNumericos.bancoChileArriendo.abonos)]);
-  datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].gastos)]);
-  datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
-  datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + valoresNumericos.bancoChileArriendo.abonos - totalesPorCuenta['Banco de Chile - Arriendo'].gastos)]);
-  datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.bancoChileArriendo.lineaCredito)]);
+  // Agregar resumen de cuentas según la empresa seleccionada
+  if (empresaSeleccionada === 'arricam') {
+    // Solo cuentas de ARRICAM
+    datosDetalle.push(['']);
+    datosDetalle.push(['CTA. CTE. ARRDOS NRO. 168-06824-09']);
+    datosDetalle.push(['SALDO INICIAL CHILE', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial)]);
+    datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.bancoChileArriendo.abonos)]);
+    datosDetalle.push(['OTRO ABONO', '', '']);
+    datosDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + valoresNumericos.bancoChileArriendo.abonos)]);
+    datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].gastos)]);
+    datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
+    datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco de Chile - Arriendo'].saldoInicial + valoresNumericos.bancoChileArriendo.abonos - totalesPorCuenta['Banco de Chile - Arriendo'].gastos)]);
+    datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.bancoChileArriendo.lineaCredito)]);
+    
+    datosDetalle.push(['']);
+    datosDetalle.push(['CTA. CTE. VENTAS NRO. 168-08475-09']);
+    datosDetalle.push(['SALDO INICIAL CHILE', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial)]);
+    datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.bancoChileVenta.abonos)]);
+    datosDetalle.push(['OTRO ABONO', '', '']);
+    datosDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + valoresNumericos.bancoChileVenta.abonos)]);
+    datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].gastos)]);
+    datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
+    datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + valoresNumericos.bancoChileVenta.abonos - totalesPorCuenta['Banco de Chile - Venta'].gastos)]);
+    
+    datosDetalle.push(['']);
+    datosDetalle.push(['CTA. CTE. BANCO SANTANDER NRO. 6866228-1']);
+    datosDetalle.push(['SALDO INICIAL SANTANDER', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial)]);
+    datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.bancoSantander.abonos)]);
+    datosDetalle.push(['OTRO ABONO', '', '']);
+    datosDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.bancoSantander.abonos)]);
+    datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco Santander'].gastos)]);
+    datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
+    datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.bancoSantander.abonos - totalesPorCuenta['Banco Santander'].gastos)]);
+    datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.bancoSantander.lineaCredito)]);
+  }
   
-  datosDetalle.push(['']);
-  datosDetalle.push(['CTA. CTE. VENTAS NRO. 168-08475-09']);
-  datosDetalle.push(['SALDO INICIAL CHILE', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial)]);
-  datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.bancoChileVenta.abonos)]);
-  datosDetalle.push(['OTRO ABONO', '', '']);
-  datosDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + valoresNumericos.bancoChileVenta.abonos)]);
-  datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].gastos)]);
-  datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
-  datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco de Chile - Venta'].saldoInicial + valoresNumericos.bancoChileVenta.abonos - totalesPorCuenta['Banco de Chile - Venta'].gastos)]);
-  
-  datosDetalle.push(['']);
-  datosDetalle.push(['CTA. CTE. BANCO SANTANDER NRO. 6866228-1']);
-  datosDetalle.push(['SALDO INICIAL SANTANDER', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial)]);
-  datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.bancoSantander.abonos)]);
-  datosDetalle.push(['OTRO ABONO', '', '']);
-  datosDetalle.push(['TOT HABER', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.bancoSantander.abonos)]);
-  datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Banco Santander'].gastos)]);
-  datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
-  datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(totalesPorCuenta['Banco Santander'].saldoInicial + valoresNumericos.bancoSantander.abonos - totalesPorCuenta['Banco Santander'].gastos)]);
-  datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.bancoSantander.lineaCredito)]);
+  // Agregar secciones de FERRETERIA solo si está seleccionada
+  if (empresaSeleccionada === 'ferreteria') {
+    datosDetalle.push(['']);
+    datosDetalle.push(['CTA. CTE. ARRIENDOS NRO. 168-11115-02']);
+    datosDetalle.push(['SALDO INICIAL FERRETERIA CHILE ARRIENDO', '', formatearNumero(valoresNumericos.ferreteriaBancoChileArriendo.saldoInicial)]);
+    datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.ferreteriaBancoChileArriendo.abonos)]);
+    datosDetalle.push(['OTRO ABONO', '', '']);
+    datosDetalle.push(['TOT HABER', '', formatearNumero(valoresNumericos.ferreteriaBancoChileArriendo.saldoInicial + valoresNumericos.ferreteriaBancoChileArriendo.abonos)]);
+    datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Ferreteria Banco Chile - Arriendo']?.gastos || 0)]);
+    datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
+    datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(valoresNumericos.ferreteriaBancoChileArriendo.saldoInicial + valoresNumericos.ferreteriaBancoChileArriendo.abonos - (totalesPorCuenta['Ferreteria Banco Chile - Arriendo']?.gastos || 0))]);
+    datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.ferreteriaBancoChileArriendo.lineaCredito)]);
+    
+    datosDetalle.push(['']);
+    datosDetalle.push(['CTA. CTE. VENTAS NRO. 168-13961-08']);
+    datosDetalle.push(['SALDO INICIAL FERRETERIA CHILE VENTA', '', formatearNumero(valoresNumericos.ferreteriaBancoChileVenta.saldoInicial)]);
+    datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.ferreteriaBancoChileVenta.abonos)]);
+    datosDetalle.push(['OTRO ABONO', '', '']);
+    datosDetalle.push(['TOT HABER', '', formatearNumero(valoresNumericos.ferreteriaBancoChileVenta.saldoInicial + valoresNumericos.ferreteriaBancoChileVenta.abonos)]);
+    datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Ferreteria Banco Chile - Venta']?.gastos || 0)]);
+    datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
+    datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(valoresNumericos.ferreteriaBancoChileVenta.saldoInicial + valoresNumericos.ferreteriaBancoChileVenta.abonos - (totalesPorCuenta['Ferreteria Banco Chile - Venta']?.gastos || 0))]);
+    datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.ferreteriaBancoChileVenta.lineaCredito)]);
+    
+    datosDetalle.push(['']);
+    datosDetalle.push(['CTA. CTE. BANCO SANTANDER NRO. 0-000-9208349-7']);
+    datosDetalle.push(['SALDO INICIAL FERRETERIA SANTANDER', '', formatearNumero(valoresNumericos.ferreteriaBancoSantander.saldoInicial)]);
+    datosDetalle.push(['ABONOS CTA CTE', '', formatearNumero(valoresNumericos.ferreteriaBancoSantander.abonos)]);
+    datosDetalle.push(['OTRO ABONO', '', '']);
+    datosDetalle.push(['TOT HABER', '', formatearNumero(valoresNumericos.ferreteriaBancoSantander.saldoInicial + valoresNumericos.ferreteriaBancoSantander.abonos)]);
+    datosDetalle.push(['GASTOS', '', formatearNumero(totalesPorCuenta['Ferreteria Banco Santander']?.gastos || 0)]);
+    datosDetalle.push(['CHQ. GIRADOS X COB', '', '']);
+    datosDetalle.push(['SALDO LIQUIDO', '', formatearNumero(valoresNumericos.ferreteriaBancoSantander.saldoInicial + valoresNumericos.ferreteriaBancoSantander.abonos - (totalesPorCuenta['Ferreteria Banco Santander']?.gastos || 0))]);
+    datosDetalle.push(['LINEA CREDITO', '', formatearNumero(valoresNumericos.ferreteriaBancoSantander.lineaCredito)]);
+  }
   
   // Agregar datos a la hoja de detalle
   datosDetalle.forEach((row, rowIndex) => {

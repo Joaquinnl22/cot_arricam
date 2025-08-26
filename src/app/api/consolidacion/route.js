@@ -165,6 +165,7 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   let totalAbonos = 0;
   let saldoInicial = 0;
   let numeroCuenta = '';
+  let esCuentaFerreteria = false;
   
   // Obtener la primera hoja
   const sheetName = workbook.SheetNames[0];
@@ -180,11 +181,60 @@ function procesarArchivoBanco(workbook, tipoBanco) {
       for (let j = 0; j < row.length; j++) {
         const cell = row[j];
         if (cell && typeof cell === 'string') {
-          // Buscar patrones de cuenta
-          const match = cell.match(/cta:(\d+)/i) || cell.match(/cuenta:(\d+)/i) || cell.match(/(\d{3}-\d{5}-\d{2})/);
+          // Buscar patrones de cuenta mejorados
+          let match = null;
+          
+          // Patrón 1: cta:001681111502
+          match = cell.match(/cta:(\d+)/i);
           if (match) {
             numeroCuenta = match[1];
-            console.log(`Número de cuenta encontrado: ${numeroCuenta}`);
+            console.log(`Número de cuenta encontrado (patrón cta:): ${numeroCuenta}`);
+            break;
+          }
+          
+          // Patrón 2: cuenta:001681111502
+          match = cell.match(/cuenta:(\d+)/i);
+          if (match) {
+            numeroCuenta = match[1];
+            console.log(`Número de cuenta encontrado (patrón cuenta:): ${numeroCuenta}`);
+            break;
+          }
+          
+          // Patrón 3: 168-06824-09 (formato con guiones)
+          match = cell.match(/(\d{3}-\d{5}-\d{2})/);
+          if (match) {
+            numeroCuenta = match[1];
+            console.log(`Número de cuenta encontrado (patrón con guiones): ${numeroCuenta}`);
+            break;
+          }
+          
+          // Patrón 4: 0-000-9208349-7 (formato Santander)
+          match = cell.match(/(\d-\d{3}-\d{7}-\d)/);
+          if (match) {
+            numeroCuenta = match[1];
+            console.log(`Número de cuenta encontrado (patrón Santander): ${numeroCuenta}`);
+            break;
+          }
+          
+          // Patrón 5: 001681111502 (formato sin guiones)
+          match = cell.match(/(\d{12})/);
+          if (match) {
+            numeroCuenta = match[1];
+            console.log(`Número de cuenta encontrado (patrón sin guiones): ${numeroCuenta}`);
+            break;
+          }
+          
+          // Patrón 6: Buscar cualquier número que contenga 16811115 o 16813961 (cuentas de ferreteria)
+          if (cell.includes('16811115') || cell.includes('16813961')) {
+            numeroCuenta = cell.replace(/[^\d]/g, ''); // Extraer solo números
+            console.log(`Número de cuenta encontrado (patrón ferreteria): ${numeroCuenta}`);
+            break;
+          }
+          
+          // Patrón 7: Buscar cualquier número que contenga 16806824 o 16808475 (cuentas de arricam)
+          if (cell.includes('16806824') || cell.includes('16808475')) {
+            numeroCuenta = cell.replace(/[^\d]/g, ''); // Extraer solo números
+            console.log(`Número de cuenta encontrado (patrón arricam): ${numeroCuenta}`);
             break;
           }
         }
@@ -406,6 +456,20 @@ function procesarArchivoBanco(workbook, tipoBanco) {
       }
     }
     
+    // Identificar si es cuenta de ferreteria o ARRICAM basándose en el número de cuenta detectado
+    let esCuentaFerreteria = false;
+    if (numeroCuenta) {
+      if (numeroCuenta.includes('9208349') || numeroCuenta.includes('9208349-7')) {
+        esCuentaFerreteria = true;
+        console.log(`🏢 Cuenta Santander identificada como FERRETERIA: ${numeroCuenta}`);
+      } else if (numeroCuenta.includes('6866228') || numeroCuenta.includes('6866228-1')) {
+        esCuentaFerreteria = false;
+        console.log(`🏢 Cuenta Santander identificada como ARRICAM: ${numeroCuenta}`);
+      } else {
+        console.log(`⚠️ No se pudo identificar el tipo de empresa para cuenta Santander: ${numeroCuenta}`);
+      }
+    }
+    
     // Procesar gastos desde fila 17 hasta "Resumen comisión"
     console.log('🔍 Procesando gastos Santander desde fila 17 hasta "Resumen comisión"');
     
@@ -503,7 +567,11 @@ function procesarArchivoBanco(workbook, tipoBanco) {
   console.log(`Número de cuenta: ${numeroCuenta}`);
   console.log(`=== FIN RESUMEN ${tipoBanco.toUpperCase()} ===`);
   
-  return { movimientos, totalAbonos, saldoInicial, numeroCuenta };
+  if (tipoBanco === 'santander') {
+    return { movimientos, totalAbonos, saldoInicial, numeroCuenta, esCuentaFerreteria };
+  } else {
+    return { movimientos, totalAbonos, saldoInicial, numeroCuenta };
+  }
 }
 
 export async function POST(request) {
@@ -515,6 +583,7 @@ export async function POST(request) {
     const categorizacionesStr = formData.get('categorizaciones');
     const santanderCategorizacionesStr = formData.get('santanderCategorizaciones');
     const valoresFijosStr = formData.get('valoresFijos');
+    const empresaSeleccionada = formData.get('empresaSeleccionada') || 'arricam';
     
     // Parsear valores fijos si se proporcionan
     let valoresFijos = null;
@@ -525,13 +594,7 @@ export async function POST(request) {
         console.error('Error al parsear valores fijos:', error);
       }
     }
-    
-    if (bancoChileCount < 2 || !bancoSantanderFile) {
-      return NextResponse.json(
-        { success: false, error: 'Se requieren al menos 2 archivos del Banco de Chile y uno del Banco Santander' },
-        { status: 400 }
-      );
-    }
+
     
     // Procesar múltiples archivos del Banco de Chile (.xls)
     let movimientosChile = [];
@@ -549,34 +612,58 @@ export async function POST(request) {
         const saldoInicial = resultado.saldoInicial;
         const numeroCuenta = resultado.numeroCuenta;
         
-        console.log(`📊 Archivo ${i + 1} procesado:`);
-        console.log(`  - Movimientos encontrados: ${movimientosArchivo.length}`);
-        console.log(`  - Total abonos: ${formatearNumero(totalAbonos)}`);
-        console.log(`  - Saldo inicial: ${formatearNumero(saldoInicial)}`);
-        console.log(`  - Número de cuenta: ${numeroCuenta || 'No detectado'}`);
+        console.log(`📊 Archivo ${i + 1} procesado: ${movimientosArchivo.length} movimientos, ${formatearNumero(totalAbonos)} abonos, saldo ${formatearNumero(saldoInicial)}`);
         
-        // Asignar tipo de cuenta según el número de cuenta detectado
+        // Asignar tipo de cuenta según el número de cuenta detectado y la empresa seleccionada
         let tipoCuenta = '';
-        if (numeroCuenta && (numeroCuenta.includes('16806824') || numeroCuenta.includes('168-06824'))) {
-          tipoCuenta = 'arriendo';
-          abonosChile.arriendo = totalAbonos;
-          saldosInicialesChile.arriendo = saldoInicial;
-          console.log(`✅ Asignando ${formatearNumero(totalAbonos)} a bancoChileArriendo (cuenta: ${numeroCuenta})`);
-        } else if (numeroCuenta && (numeroCuenta.includes('16808475') || numeroCuenta.includes('168-08475'))) {
-          tipoCuenta = 'venta';
-          abonosChile.venta = totalAbonos;
-          saldosInicialesChile.venta = saldoInicial;
-          console.log(`✅ Asignando ${formatearNumero(totalAbonos)} a bancoChileVenta (cuenta: ${numeroCuenta})`);
-        } else {
-          console.log(`⚠️ No se pudo determinar el tipo de cuenta para: ${numeroCuenta || 'undefined'}`);
-          // Fallback al método anterior
-          tipoCuenta = i === 0 ? 'venta' : 'arriendo';
-          if (tipoCuenta === 'venta') {
-            abonosChile.venta = totalAbonos;
-            saldosInicialesChile.venta = saldoInicial;
-          } else {
+        
+        if (empresaSeleccionada === 'ferreteria') {
+          // Para ferreteria, usar cuentas específicas de ferreteria
+          if (numeroCuenta && (numeroCuenta.includes('16811115') || numeroCuenta.includes('168-11115'))) {
+            tipoCuenta = 'arriendo';
             abonosChile.arriendo = totalAbonos;
             saldosInicialesChile.arriendo = saldoInicial;
+            console.log(`✅ Ferreteria Arriendo: ${formatearNumero(totalAbonos)} (cuenta: ${numeroCuenta})`);
+          } else if (numeroCuenta && (numeroCuenta.includes('16813961') || numeroCuenta.includes('168-13961'))) {
+            tipoCuenta = 'venta';
+            abonosChile.venta = totalAbonos;
+            saldosInicialesChile.venta = saldoInicial;
+            console.log(`✅ Ferreteria Venta: ${formatearNumero(totalAbonos)} (cuenta: ${numeroCuenta})`);
+          } else {
+            console.log(`⚠️ Cuenta ferreteria no identificada: ${numeroCuenta || 'undefined'}`);
+            // Fallback al método anterior
+            tipoCuenta = i === 0 ? 'venta' : 'arriendo';
+            if (tipoCuenta === 'venta') {
+              abonosChile.venta = totalAbonos;
+              saldosInicialesChile.venta = saldoInicial;
+            } else {
+              abonosChile.arriendo = totalAbonos;
+              saldosInicialesChile.arriendo = saldoInicial;
+            }
+          }
+        } else {
+          // Para ARRICAM, usar cuentas específicas de ARRICAM
+          if (numeroCuenta && (numeroCuenta.includes('16806824') || numeroCuenta.includes('168-06824'))) {
+            tipoCuenta = 'arriendo';
+            abonosChile.arriendo = totalAbonos;
+            saldosInicialesChile.arriendo = saldoInicial;
+            console.log(`✅ ARRICAM Arriendo: ${formatearNumero(totalAbonos)} (cuenta: ${numeroCuenta})`);
+          } else if (numeroCuenta && (numeroCuenta.includes('16808475') || numeroCuenta.includes('168-08475'))) {
+            tipoCuenta = 'venta';
+            abonosChile.venta = totalAbonos;
+            saldosInicialesChile.venta = saldoInicial;
+            console.log(`✅ ARRICAM Venta: ${formatearNumero(totalAbonos)} (cuenta: ${numeroCuenta})`);
+          } else {
+            console.log(`⚠️ Cuenta ARRICAM no identificada: ${numeroCuenta || 'undefined'}`);
+            // Fallback al método anterior
+            tipoCuenta = i === 0 ? 'venta' : 'arriendo';
+            if (tipoCuenta === 'venta') {
+              abonosChile.venta = totalAbonos;
+              saldosInicialesChile.venta = saldoInicial;
+            } else {
+              abonosChile.arriendo = totalAbonos;
+              saldosInicialesChile.arriendo = saldoInicial;
+            }
           }
         }
         
@@ -595,6 +682,9 @@ export async function POST(request) {
     const movimientosSantander = resultadoSantander.movimientos;
     const abonosSantander = resultadoSantander.totalAbonos;
     const saldoInicialSantander = resultadoSantander.saldoInicial;
+    const esCuentaFerreteriaSantander = resultadoSantander.esCuentaFerreteria || false;
+    
+    console.log(`🏢 Santander: ${esCuentaFerreteriaSantander ? 'FERRETERIA' : 'ARRICAM'}`);
     
     // Consolidar todos los movimientos
     let todosLosMovimientos = [...movimientosChile, ...movimientosSantander];
@@ -611,12 +701,96 @@ export async function POST(request) {
     }
     
     // Actualizar abonos y saldos iniciales calculados automáticamente
-    valoresFijos.bancoChileArriendo.abonos = abonosChile.arriendo;
-    valoresFijos.bancoChileArriendo.saldoInicial = saldosInicialesChile.arriendo;
-    valoresFijos.bancoChileVenta.abonos = abonosChile.venta;
-    valoresFijos.bancoChileVenta.saldoInicial = saldosInicialesChile.venta;
-    valoresFijos.bancoSantander.abonos = abonosSantander;
-    valoresFijos.bancoSantander.saldoInicial = saldoInicialSantander;
+    // SOLO si no existen ya en los valores fijos del frontend
+    if (valoresFijos.bancoChileArriendo.abonos === 0) {
+      valoresFijos.bancoChileArriendo.abonos = abonosChile.arriendo;
+    }
+    if (valoresFijos.bancoChileArriendo.saldoInicial === 0) {
+      valoresFijos.bancoChileArriendo.saldoInicial = saldosInicialesChile.arriendo;
+    }
+    if (valoresFijos.bancoChileVenta.abonos === 0) {
+      valoresFijos.bancoChileVenta.abonos = abonosChile.venta;
+    }
+    if (valoresFijos.bancoChileVenta.saldoInicial === 0) {
+      valoresFijos.bancoChileVenta.saldoInicial = saldosInicialesChile.venta;
+    }
+    if (valoresFijos.bancoSantander.abonos === 0) {
+      valoresFijos.bancoSantander.abonos = abonosSantander;
+    }
+    if (valoresFijos.bancoSantander.saldoInicial === 0) {
+      valoresFijos.bancoSantander.saldoInicial = saldoInicialSantander;
+    }
+    
+    console.log('🔍 Valores fijos actualizados');
+    
+    // Si se selecciona ferreteria, agregar las claves específicas de ferreteria
+    if (empresaSeleccionada === 'ferreteria') {
+      // Para ferreteria, usar los valores de las cuentas de ferreteria
+      // SOLO si no existen ya en los valores fijos del frontend
+      if (!valoresFijos.ferreteriaBancoChileArriendo) {
+        valoresFijos.ferreteriaBancoChileArriendo = {
+          saldoInicial: 0,
+          abonos: 0,
+          lineaCredito: 0
+        };
+      }
+      if (!valoresFijos.ferreteriaBancoChileVenta) {
+        valoresFijos.ferreteriaBancoChileVenta = {
+          saldoInicial: 0,
+          abonos: 0,
+          lineaCredito: 0
+        };
+      }
+      if (!valoresFijos.ferreteriaBancoSantander) {
+        valoresFijos.ferreteriaBancoSantander = {
+          saldoInicial: 0,
+          abonos: 0,
+          lineaCredito: 0
+        };
+      }
+      
+      // Actualizar solo si no existen valores previos
+      if (valoresFijos.ferreteriaBancoChileArriendo.abonos === 0) {
+        valoresFijos.ferreteriaBancoChileArriendo.abonos = abonosChile.arriendo;
+      }
+      if (valoresFijos.ferreteriaBancoChileArriendo.saldoInicial === 0) {
+        valoresFijos.ferreteriaBancoChileArriendo.saldoInicial = saldosInicialesChile.arriendo;
+      }
+      if (valoresFijos.ferreteriaBancoChileVenta.abonos === 0) {
+        valoresFijos.ferreteriaBancoChileVenta.abonos = abonosChile.venta;
+      }
+      if (valoresFijos.ferreteriaBancoChileVenta.saldoInicial === 0) {
+        valoresFijos.ferreteriaBancoChileVenta.saldoInicial = saldosInicialesChile.venta;
+      }
+      if (valoresFijos.ferreteriaBancoSantander.abonos === 0) {
+        valoresFijos.ferreteriaBancoSantander.abonos = abonosSantander;
+      }
+      if (valoresFijos.ferreteriaBancoSantander.saldoInicial === 0) {
+        valoresFijos.ferreteriaBancoSantander.saldoInicial = saldoInicialSantander;
+      }
+      
+      console.log('🏢 Valores ferreteria construidos');
+      
+      // También actualizar los valores originales para mantener compatibilidad
+      // PERO preservar los valores del frontend si existen
+      valoresFijos.bancoChileArriendo = {
+        saldoInicial: valoresFijos.ferreteriaBancoChileArriendo.saldoInicial,
+        abonos: valoresFijos.ferreteriaBancoChileArriendo.abonos,
+        lineaCredito: valoresFijos.ferreteriaBancoChileArriendo.lineaCredito
+      };
+      valoresFijos.bancoChileVenta = {
+        saldoInicial: valoresFijos.ferreteriaBancoChileVenta.saldoInicial,
+        abonos: valoresFijos.ferreteriaBancoChileVenta.abonos,
+        lineaCredito: valoresFijos.ferreteriaBancoChileVenta.lineaCredito
+      };
+      valoresFijos.bancoSantander = {
+        saldoInicial: valoresFijos.ferreteriaBancoSantander.saldoInicial,
+        abonos: valoresFijos.ferreteriaBancoSantander.abonos,
+        lineaCredito: valoresFijos.ferreteriaBancoSantander.lineaCredito
+      };
+      
+      console.log('🏢 Valores originales actualizados');
+    }
     
     // Aplicar categorizaciones manuales si existen
     if (categorizacionesStr) {
@@ -635,11 +809,36 @@ export async function POST(request) {
     
     // Si no hay categorizaciones, devolver todos los movimientos para categorización
     if (!categorizacionesStr) {
+      // Construir respuesta con claves según la empresa seleccionada
+      let respuestaValoresFijos = valoresFijos;
+      
+      if (empresaSeleccionada === 'ferreteria') {
+        // Para ferreteria, enviar datos con claves de ferreteria
+        respuestaValoresFijos = {
+          ...valoresFijos,
+          ferreteriaBancoChileArriendo: {
+            saldoInicial: valoresFijos.bancoChileArriendo?.saldoInicial || 0,
+            abonos: valoresFijos.bancoChileArriendo?.abonos || 0,
+            lineaCredito: valoresFijos.bancoChileArriendo?.lineaCredito || 0
+          },
+          ferreteriaBancoChileVenta: {
+            saldoInicial: valoresFijos.bancoChileVenta?.saldoInicial || 0,
+            abonos: valoresFijos.bancoChileVenta?.abonos || 0,
+            lineaCredito: valoresFijos.bancoChileVenta?.lineaCredito || 0
+          },
+          ferreteriaBancoSantander: {
+            saldoInicial: valoresFijos.bancoSantander?.saldoInicial || 0,
+            abonos: valoresFijos.bancoSantander?.abonos || 0,
+            lineaCredito: valoresFijos.bancoSantander?.lineaCredito || 0
+          }
+        };
+      }
+      
       return NextResponse.json(
         { 
           success: false, 
           todosLosMovimientos: todosLosMovimientos,
-          valoresFijos: valoresFijos,
+          valoresFijos: respuestaValoresFijos,
           error: 'Debes categorizar todos los movimientos'
         },
         { status: 400 }
@@ -652,8 +851,35 @@ export async function POST(request) {
     const nombreMesAnteriorCorto = mesAnterior.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
     const añoAnterior = mesAnterior.getFullYear();
     
+    // Construir valores fijos con claves de ferreteria si es necesario
+    let valoresFijosParaExcel = valoresFijos;
+    
+    if (empresaSeleccionada === 'ferreteria') {
+      // Para ferreteria, usar los valores de las claves específicas de ferreteria
+      valoresFijosParaExcel = {
+        ...valoresFijos,
+        ferreteriaBancoChileArriendo: {
+          saldoInicial: valoresFijos.ferreteriaBancoChileArriendo?.saldoInicial || 0,
+          abonos: valoresFijos.ferreteriaBancoChileArriendo?.abonos || 0,
+          lineaCredito: valoresFijos.ferreteriaBancoChileArriendo?.lineaCredito || 0
+        },
+        ferreteriaBancoChileVenta: {
+          saldoInicial: valoresFijos.ferreteriaBancoChileVenta?.saldoInicial || 0,
+          abonos: valoresFijos.ferreteriaBancoChileVenta?.abonos || 0,
+          lineaCredito: valoresFijos.ferreteriaBancoChileVenta?.lineaCredito || 0
+        },
+        ferreteriaBancoSantander: {
+          saldoInicial: valoresFijos.ferreteriaBancoSantander?.saldoInicial || 0,
+          abonos: valoresFijos.ferreteriaBancoSantander?.abonos || 0,
+          lineaCredito: valoresFijos.ferreteriaBancoSantander?.lineaCredito || 0
+        }
+      };
+      
+      console.log('🏢 Valores para Excel listos');
+    }
+    
     // Generar reporte consolidado con ExcelJS
-    const buffer = await generarReporteConsolidadoExcelJS(todosLosMovimientos, valoresFijos);
+    const buffer = await generarReporteConsolidadoExcelJS(todosLosMovimientos, valoresFijosParaExcel, empresaSeleccionada);
     
     return new NextResponse(buffer, {
       status: 200,
