@@ -42,17 +42,3 @@ export async function PATCH() {
   });
 }
 
-export async function PUT() {
-  const mongoose = await connectToDatabase();
-  const Contador = mongoose.connection.collection("settings");
-
-  const upd = await Contador.findOneAndUpdate(
-    { _id: "contadorOrdenCompra" },
-    { value: 1950 },
-    { upsert: true, returnDocument: "after" }
-  );
-
-  return new Response(JSON.stringify({ valor: upd.value.value }), {
-    headers: { "Content-Type": "application/json" },
-  });
-} 

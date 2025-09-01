@@ -62,8 +62,7 @@ export default function ConsolidacionPage() {
   // Estado para indicar si se están calculando abonos
   const [calculandoAbonos, setCalculandoAbonos] = useState(false);
   
-  // Estado para la cuenta detectada actualmente
-  const [cuentaDetectada, setCuentaDetectada] = useState(null);
+
   
   // Estado para seleccionar qué empresa consolidar
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState('arricam'); // 'arricam' o 'ferreteria'
@@ -91,16 +90,7 @@ export default function ConsolidacionPage() {
     }));
   };
 
-  // Función para determinar qué cuenta se está procesando
-  const determinarCuentaProcesando = () => {
-    if (files.bancoChile.length > 0) {
-      return 'Banco de Chile';
-    }
-    if (files.bancoSantander) {
-      return 'Banco Santander';
-    }
-    return null;
-  };
+
 
   // Función para calcular abonos automáticamente
   const calcularAbonosAutomaticamente = async () => {

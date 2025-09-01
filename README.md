@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ARRICAM - Sistema de Gestión Empresarial
 
-## Getting Started
+Sistema web para la gestión de cotizaciones, contratos, órdenes de compra y consolidación financiera de ARRICAM SPA.
 
-First, run the development server:
+## 🚀 Funcionalidades
 
+### 📋 Cotizaciones
+- Crear y gestionar cotizaciones para venta y arriendo
+- Generar PDFs automáticamente
+- Contador automático de cotizaciones
+- Gestión de productos y precios
+
+### 📄 Contratos
+- Generación de contratos de venta y arriendo
+- Templates personalizados
+- Exportación a PDF
+
+### 🛒 Órdenes de Compra
+- Crear órdenes de compra
+- Contador automático
+- Gestión de proveedores
+
+### 💰 Consolidación Financiera
+- Procesamiento de archivos bancarios (CSV/Excel)
+- Soporte para Banco de Chile y Santander
+- Cálculo automático de saldos iniciales y abonos
+- Generación de reportes consolidados en Excel
+- Soporte para múltiples empresas (Arricam y Ferretería)
+
+## 🛠️ Tecnologías
+
+- **Frontend:** Next.js 14, React, Tailwind CSS
+- **Backend:** Next.js API Routes
+- **Base de Datos:** MongoDB
+- **PDF:** Puppeteer, Chrome AWS Lambda
+- **Excel:** XLSX, ExcelJS
+- **Deploy:** Vercel
+
+## 📦 Instalación
+
+1. **Clonar el repositorio**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/tu-usuario/cot_arricam.git
+cd cot_arricam
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Instalar dependencias**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+3. **Configurar variables de entorno**
+```bash
+cp .env.example .env.local
+```
+Editar `.env.local` con tus credenciales de MongoDB:
+```
+MONGODB_URI=tu_uri_de_mongodb
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Ejecutar en desarrollo**
+```bash
+npm run dev
+```
 
-## Learn More
+5. **Abrir en el navegador**
+```
+http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 Estructura del Proyecto
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── api/                    # API Routes
+│   │   ├── consolidacion/      # Consolidación financiera
+│   │   ├── contador/           # Contadores automáticos
+│   │   ├── login/              # Autenticación
+│   │   └── productos/          # Gestión de productos
+│   ├── consolidacion/          # Página de consolidación
+│   ├── contratos/              # Página de contratos
+│   ├── cotizacion/             # Páginas de cotización
+│   └── orden-compra/           # Página de órdenes de compra
+├── components/                 # Componentes reutilizables
+├── lib/                        # Configuración de MongoDB
+└── models/                     # Modelos de datos
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 Uso
 
-## Deploy on Vercel
+### Consolidación Financiera
+1. Ir a `/consolidacion`
+2. Subir archivos bancarios (CSV/Excel)
+3. Revisar y ajustar saldos iniciales
+4. Generar reporte consolidado
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Cotizaciones
+1. Ir a `/cotizacion`
+2. Crear nueva cotización
+3. Agregar productos
+4. Generar PDF
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Contratos
+1. Ir a `/contratos`
+2. Seleccionar tipo de contrato
+3. Completar datos
+4. Generar PDF
+
+## 🚀 Deploy
+
+El proyecto está configurado para deploy automático en Vercel:
+
+1. Conectar repositorio a Vercel
+2. Configurar variables de entorno
+3. Deploy automático en cada push
+
+## 📝 Notas
+
+- Los archivos bancarios deben estar en formato CSV o Excel
+- Los templates de PDF están en `public/templates/`
+- Los contadores se almacenan en MongoDB
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crear rama para feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abrir Pull Request
+
+## 📄 Licencia
+
+Este proyecto es privado para ARRICAM SPA.
